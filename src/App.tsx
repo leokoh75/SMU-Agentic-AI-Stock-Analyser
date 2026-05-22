@@ -699,7 +699,7 @@ export default function App() {
                   <MessageSquare className="w-5 h-5 text-indigo-600" />
                   <div>
                     <h4 className="text-xs font-bold text-slate-950 font-sans">Part 2: Community Discussion Feed</h4>
-                    <p className="text-4xs text-slate-400 font-sans">Disqus widget • Traditional Chinese zh_TW preset enabled</p>
+                    <p className="text-4xs text-slate-400 font-sans">Disqus widget • English (Singapore) en_SG preset enabled</p>
                   </div>
                 </div>
 
@@ -710,7 +710,7 @@ export default function App() {
                       url: typeof window !== "undefined" ? window.location.href : "https://smu-agentic-ai-stock-analyse.com",
                       identifier: "smu-agentic-ai-stock-analyse-comments-v1",
                       title: "SMU Agentic AI Stock Analyse Discussion Hub",
-                      language: "zh_TW"
+                      language: "en_SG"
                     }}
                   />
                 </div>
@@ -743,7 +743,7 @@ export default function App() {
                 <MessageSquare className="w-5 h-5 text-teal-400 font-bold" />
                 <div>
                   <h3 className="text-sm font-bold tracking-tight">Equilibrium Community Strategy Hub</h3>
-                  <p className="text-4xs text-slate-300 font-sans mt-0.5">Exchange strategies with other traders. Traditional Chinese language translation is enabled.</p>
+                  <p className="text-4xs text-slate-300 font-sans mt-0.5">Exchange strategies with other traders. English (Singapore) language translation is enabled.</p>
                 </div>
               </div>
               <button 
@@ -764,7 +764,7 @@ export default function App() {
                       url: commentsProps.article.url,
                       identifier: commentsProps.article.id,
                       title: commentsProps.article.title,
-                      language: 'zh_TW' //e.g. for Traditional Chinese (Taiwan)
+                      language: 'en_SG' //e.g. for English (Singapore)
                     }
                   }
                 />
