@@ -12,6 +12,7 @@ import { PortfolioView } from "./components/PortfolioView";
 import { ChartView } from "./components/ChartView";
 import { ThesisView } from "./components/ThesisView";
 import { OutlierRecommendationsView } from "./components/OutlierRecommendationsView";
+import { PriceAlertsView, PriceAlert } from "./components/PriceAlertsView";
 import { supabase } from "./lib/supabase";
 import { DiscussionEmbed } from 'disqus-react';
 
@@ -30,7 +31,8 @@ import {
   BookOpen,
   Zap,
   MoreHorizontal,
-  MessageSquare
+  MessageSquare,
+  Bell
 } from "lucide-react";
 
 export default function App() {
@@ -38,6 +40,33 @@ export default function App() {
   const [showGlossary, setShowGlossary] = useState<boolean>(false);
   const [showDiscussion, setShowDiscussion] = useState<boolean>(false);
   const [showMoreMenu, setShowMoreMenu] = useState<boolean>(false);
+
+  // Load registered price alerts from local memory
+  const [alerts, setAlerts] = useState<PriceAlert[]>(() => {
+    try {
+      const cached = localStorage.getItem("equilibrium_price_alerts");
+      if (!cached) return [];
+      const parsed = JSON.parse(cached) as any[];
+      return parsed.map(item => ({
+        ...item,
+        email: item.email || "leokoh75@gmail.com",
+        triggerType: item.triggerType || (item.condition === "BELOW" ? "BUY" : "SELL")
+      }));
+    } catch {
+      return [];
+    }
+  });
+
+  const [isSendingAlert, setIsSendingAlert] = useState<boolean>(false);
+
+  // Sync price alerts to local storage
+  useEffect(() => {
+    try {
+      localStorage.setItem("equilibrium_price_alerts", JSON.stringify(alerts));
+    } catch (e) {
+      console.warn("localStorage alerts write blocked:", e);
+    }
+  }, [alerts]);
 
   const commentsProps = {
     article: {
@@ -147,6 +176,106 @@ export default function App() {
     }
   };
 
+  // Evaluate active alerts against the newest stock pricing indices
+  const checkActiveAlertsAndNotify = async (currentStocksList: Stock[]) => {
+    // We need to bypass stale state reading from closure by reading from the current list
+    const activeAlerts = alertsRef.current.filter(a => a.isActive);
+    if (activeAlerts.length === 0) return;
+
+    const triggeredAlertIds: string[] = [];
+
+    for (const alertItem of activeAlerts) {
+      const matched = currentStocksList.find(s => s.ticker === alertItem.ticker);
+      if (!matched) continue;
+
+      const livePrice = matched.stats.currentPrice;
+      const thresholdPrice = alertItem.targetPrice;
+      const isBreached = alertItem.condition === "ABOVE" 
+        ? livePrice >= thresholdPrice 
+        : livePrice <= thresholdPrice;
+
+      if (isBreached) {
+        triggeredAlertIds.push(alertItem.id);
+        console.log(`Alert sentinel triggered for ${alertItem.ticker}: Live $${livePrice} crossed Limit $${thresholdPrice}`);
+
+        try {
+          // Fire alert payload into Express backend
+          const res = await fetch("/api/send-email", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              ticker: alertItem.ticker,
+              currentPrice: livePrice,
+              targetPrice: thresholdPrice,
+              condition: alertItem.condition,
+              triggerType: alertItem.triggerType || "BUY",
+              email: alertItem.email || "leokoh75@gmail.com"
+            })
+          });
+          const responseData = await res.json();
+          console.log("Automated Email Sentinel Response:", responseData);
+        } catch (err) {
+          console.error("Failed to deliver automated sentinel check over background channels:", err);
+        }
+      }
+    }
+
+    if (triggeredAlertIds.length > 0) {
+      setAlerts(prev => prev.map(a => 
+        triggeredAlertIds.includes(a.id) 
+          ? { ...a, isActive: false, triggeredAt: new Date().toISOString() } 
+          : a
+      ));
+    }
+  };
+
+  const silentSyncPrices = async (currentStocks: Stock[]) => {
+    if (currentStocks.length === 0) return;
+    try {
+      const tickers = currentStocks.map(s => s.ticker);
+      const res = await fetch("/api/sync-prices", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tickers })
+      });
+      const data = await res.json();
+      if (data && data.success && data.prices) {
+        setStocks((prev) => {
+          const updated = prev.map(s => {
+            const live = data.prices[s.ticker];
+            if (live) {
+              return {
+                ...s,
+                stats: {
+                  ...s.stats,
+                  currentPrice: Number(live.currentPrice.toFixed(2)),
+                  high52w: Number(live.high52w.toFixed(2)),
+                  low52w: Number(live.low52w.toFixed(2)),
+                  movingAverage50: Number(live.movingAverage50.toFixed(2))
+                }
+              };
+            }
+            return s;
+          });
+
+          // Non-blocking sync to Supabase table
+          updated.forEach(async (item) => {
+            await supabase
+              .from("entries")
+              .insert([{ text: JSON.stringify(item), author: item.ticker }]);
+          });
+
+          // Evaluate alerts against fresh prices
+          checkActiveAlertsAndNotify(updated);
+
+          return updated;
+        });
+      }
+    } catch (err) {
+      console.warn("Silent background price sync execution error:", err);
+    }
+  };
+
   const handleSyncPrices = async () => {
     if (isSyncingPrices || stocks.length === 0) {
       alert("No stocks currently selected or synchronization is already underway.");
@@ -162,6 +291,7 @@ export default function App() {
       });
       const data = await res.json();
       if (data && data.success && data.prices) {
+        let freshStocks: Stock[] = [];
         setStocks((prev) => {
           const updated = prev.map(s => {
             const live = data.prices[s.ticker];
@@ -187,8 +317,17 @@ export default function App() {
               .insert([{ text: JSON.stringify(item), author: item.ticker }]);
           });
           
+          freshStocks = updated;
           return updated;
         });
+
+        // Evaluate alerts against newly loaded manual prices
+        setTimeout(() => {
+          if (freshStocks.length > 0) {
+            checkActiveAlertsAndNotify(freshStocks);
+          }
+        }, 100);
+
         alert("Yahoo Finance live stock prices and moving averages synchronized successfully!");
       } else {
         alert("Live stock pricing endpoint didn't return any data. Using static fallbacks.");
@@ -201,6 +340,45 @@ export default function App() {
     }
   };
 
+  const handleTestEmail = async (alertItem: PriceAlert) => {
+    setIsSendingAlert(true);
+    try {
+      const stock = stocks.find(s => s.ticker === alertItem.ticker);
+      const curPrice = stock ? stock.stats.currentPrice : alertItem.targetPrice;
+
+      const res = await fetch("/api/send-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ticker: alertItem.ticker,
+          currentPrice: curPrice,
+          targetPrice: alertItem.targetPrice,
+          condition: alertItem.condition,
+          triggerType: alertItem.triggerType || "BUY",
+          email: alertItem.email || "leokoh75@gmail.com"
+        })
+      });
+      const data = await res.json();
+      return data;
+    } catch (err: any) {
+      console.error("Failed to execute manual Email dispatch helper:", err);
+      return { success: false, error: err.message };
+    } finally {
+      setIsSendingAlert(false);
+    }
+  };
+
+  const stocksRef = React.useRef(stocks);
+  const alertsRef = React.useRef(alerts);
+
+  useEffect(() => {
+    stocksRef.current = stocks;
+  }, [stocks]);
+
+  useEffect(() => {
+    alertsRef.current = alerts;
+  }, [alerts]);
+
   // Setup Supabase live update subscription and fetch initial list
   useEffect(() => {
     loadStocksFromSupabase();
@@ -210,6 +388,13 @@ export default function App() {
     const newsInterval = setInterval(() => {
       loadLiveNews();
     }, 15 * 60 * 1000);
+
+    // Set up a recurring background check to sync Yahoo Finance prices and trigger alerts
+    const priceInterval = setInterval(() => {
+      if (stocksRef.current && stocksRef.current.length > 0) {
+        silentSyncPrices(stocksRef.current);
+      }
+    }, 5 * 60 * 1000); // Evaluates alerts and updates stocks every 5 minutes
 
     // Setup active real-time channel synchronizing updates across clients
     const channel = supabase
@@ -250,6 +435,7 @@ export default function App() {
 
     return () => {
       clearInterval(newsInterval);
+      clearInterval(priceInterval);
       supabase.removeChannel(channel);
     };
   }, []);
@@ -435,6 +621,16 @@ export default function App() {
           </button>
 
           <button
+            onClick={() => setActiveTab("alerts")}
+            className={`px-3 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
+              activeTab === "alerts" ? "bg-indigo-600 text-white" : "text-indigo-400 hover:text-indigo-300"
+            }`}
+          >
+            <Bell className="w-3.5 h-3.5" />
+            Alerts Hub
+          </button>
+
+          <button
             onClick={handleSyncPrices}
             disabled={isSyncingPrices}
             className={`px-3 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 border ml-1.5 hover:shadow-md ${
@@ -512,6 +708,7 @@ export default function App() {
             onRemoveStock={handleRemoveStock}
             onRestoreDefaults={handleRestoreDefaults}
             onSelectStock={(ticker) => handleCrossNavigate("scorecard", ticker)}
+            onAddAlert={(add) => setAlerts(p => [add, ...p])}
           />
         )}
         {activeTab === "scorecard" && (
@@ -541,6 +738,17 @@ export default function App() {
         )}
         {activeTab === "recommendations" && (
           <OutlierRecommendationsView stocks={stocks} />
+        )}
+        {activeTab === "alerts" && (
+          <PriceAlertsView
+            stocks={stocks}
+            alerts={alerts}
+            onAddAlert={(add) => setAlerts(p => [add, ...p])}
+            onRemoveAlert={(id) => setAlerts(p => p.filter(a => a.id !== id))}
+            onToggleAlert={(id) => setAlerts(p => p.map(a => a.id === id ? { ...a, isActive: !a.isActive } : a))}
+            onTestEmail={handleTestEmail}
+            isProcessing={isSendingAlert}
+          />
         )}
       </main>
 
@@ -664,14 +872,22 @@ export default function App() {
 
               <button
                 onClick={() => { setActiveTab("thesis"); setShowMoreMenu(false); }}
-                className={`py-3 px-3 rounded-xl border flex flex-col items-center justify-center gap-1 text-center transition-col cursor-pointer col-span-2 ${
+                className={`py-3 px-3 rounded-xl border flex flex-col items-center justify-center gap-1 text-center transition-all cursor-pointer ${
                   activeTab === "thesis" ? "bg-indigo-600 text-white border-indigo-600" : "bg-slate-50 border-gray-150 text-slate-700 hover:bg-slate-100"
                 }`}
               >
-                <span className="flex items-center gap-2">
-                  <FileText className="w-4 h-4" />
-                  <span className="text-4xs font-bold uppercase tracking-wider block">Thesis Checklists</span>
-                </span>
+                <FileText className="w-4 h-4" />
+                <span className="text-4xs font-bold uppercase tracking-wider block">Thesis Checklists</span>
+              </button>
+
+              <button
+                onClick={() => { setActiveTab("alerts"); setShowMoreMenu(false); }}
+                className={`py-3 px-3 rounded-xl border flex flex-col items-center justify-center gap-1 text-center transition-all cursor-pointer ${
+                  activeTab === "alerts" ? "bg-indigo-600 text-white border-indigo-600" : "bg-slate-50 border-gray-150 text-slate-700 hover:bg-slate-100"
+                }`}
+              >
+                <Bell className="w-4 h-4" />
+                <span className="text-4xs font-bold uppercase tracking-wider block">Alerts Hub</span>
               </button>
             </div>
           </div>

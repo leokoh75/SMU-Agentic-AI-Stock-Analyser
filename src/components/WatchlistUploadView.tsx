@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { Stock, AnchorClassification, DecisionState } from "../types";
+import { PriceAlert } from "./PriceAlertsView";
+import { GmailIngestionBox } from "./GmailIngestionBox";
 import { 
   FolderPlus, 
   PlusCircle, 
@@ -18,9 +20,10 @@ interface WatchlistUploadViewProps {
   onRemoveStock: (ticker: string) => void;
   onRestoreDefaults: () => void;
   onSelectStock: (ticker: string) => void;
+  onAddAlert?: (alert: PriceAlert) => void;
 }
 
-export function WatchlistUploadView({ stocks, onAddStock, onRemoveStock, onRestoreDefaults, onSelectStock }: WatchlistUploadViewProps) {
+export function WatchlistUploadView({ stocks, onAddStock, onRemoveStock, onRestoreDefaults, onSelectStock, onAddAlert }: WatchlistUploadViewProps) {
   // Manual additions form
   const [ticker, setTicker] = useState("");
   const [companyName, setCompanyName] = useState("");
@@ -234,6 +237,12 @@ export function WatchlistUploadView({ stocks, onAddStock, onRemoveStock, onResto
           Restore Default 10 Stocks
         </button>
       </div>
+
+      <GmailIngestionBox 
+        stocks={stocks} 
+        onAddStock={onAddStock} 
+        onAddAlert={onAddAlert} 
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         

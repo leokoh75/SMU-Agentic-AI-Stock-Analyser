@@ -1,6 +1,7 @@
 import express from "express";
 import path from "path";
 import dotenv from "dotenv";
+import nodemailer from "nodemailer";
 import { GoogleGenAI, Type } from "@google/genai";
 import { createServer as createViteServer } from "vite";
 
@@ -616,6 +617,452 @@ Return strictly a valid JSON object matching the following structure exactly (do
     // Generate smart random fallback matching schema precisely
     const generalData = generateGenericMock(cleanTicker, companyName);
     return res.json(generalData);
+  }
+});
+
+// -------------------------------------------------------------
+// Google OAuth & Gmail Ingestion endpoints
+// -------------------------------------------------------------
+
+function getRedirectUri(req: express.Request): string {
+  if (process.env.APP_URL) {
+    const baseUrl = process.env.APP_URL.endsWith('/') ? process.env.APP_URL.slice(0, -1) : process.env.APP_URL;
+    return `${baseUrl}/auth/callback`;
+  }
+  return `${req.protocol}://${req.get('host')}/auth/callback`;
+}
+
+function base64UrlDecode(base64url: string): string {
+  try {
+    let base64 = base64url.replace(/-/g, '+').replace(/_/g, '/');
+    while (base64.length % 4) {
+      base64 += '=';
+    }
+    return Buffer.from(base64, 'base64').toString('utf8');
+  } catch {
+    return "";
+  }
+}
+
+function decodeGmailBody(payload: any): string {
+  if (!payload) return "";
+  let body = "";
+  if (payload.body && payload.body.data) {
+    body = base64UrlDecode(payload.body.data);
+  } else if (payload.parts) {
+    for (const part of payload.parts) {
+      if (part.mimeType === "text/plain" && part.body && part.body.data) {
+        body += base64UrlDecode(part.body.data);
+      } else if (part.mimeType === "text/html" && !body && part.body && part.body.data) {
+        body = base64UrlDecode(part.body.data);
+      } else if (part.parts) {
+        body += decodeGmailBody(part);
+      }
+    }
+  }
+  return body;
+}
+
+function getHeader(headers: any[], name: string): string {
+  if (!headers) return "";
+  const match = headers.find(h => h.name.toLowerCase() === name.toLowerCase());
+  return match ? match.value : "";
+}
+
+app.get('/api/auth/google/url', (req, res) => {
+  const clientId = process.env.GOOGLE_CLIENT_ID || process.env.CLIENT_ID;
+  if (!clientId) {
+    return res.status(400).json({ error: "Google Client ID is not provisioned on this workspace. Please configure OAuth settings in AI Studio." });
+  }
+
+  const redirectUri = getRedirectUri(req);
+  const scopes = [
+    "https://www.googleapis.com/auth/gmail.readonly",
+    "https://www.googleapis.com/auth/gmail.send"
+  ];
+
+  const params = new URLSearchParams({
+    client_id: clientId,
+    redirect_uri: redirectUri,
+    response_type: "code",
+    scope: scopes.join(" "),
+    access_type: "offline",
+    prompt: "consent"
+  });
+
+  const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+  res.json({ url: authUrl });
+});
+
+app.get(['/auth/callback', '/auth/callback/'], async (req, res) => {
+  const { code } = req.query;
+  if (!code) {
+    return res.status(400).send("Authorization code is missing");
+  }
+
+  const clientId = process.env.GOOGLE_CLIENT_ID || process.env.CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET || process.env.CLIENT_SECRET;
+
+  if (!clientId || !clientSecret) {
+    console.error("Google OAuth client ID/secret are not configured.");
+    return res.status(500).send("OAuth Credentials missing on the server. Please check environment configurations.");
+  }
+
+  try {
+    const redirectUri = getRedirectUri(req);
+    const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        client_id: clientId,
+        client_secret: clientSecret,
+        code: String(code),
+        redirect_uri: redirectUri,
+        grant_type: "authorization_code"
+      })
+    });
+
+    const tokens = await tokenResponse.json() as any;
+    if (!tokenResponse.ok) {
+      console.error("Google OAuth token exchange failed:", tokens);
+      return res.status(400).send(`Token exchange failed: ${tokens.error_description || tokens.error || 'Unknown error'}`);
+    }
+
+    res.send(`
+      <html>
+        <head>
+          <title>Authentication Successful</title>
+        </head>
+        <body style="font-family: sans-serif; text-align: center; padding: 50px; background: #0f172a; color: white;">
+          <div style="max-width: 400px; margin: 0 auto; background: #1e293b; padding: 30px; border-radius: 12px; border: 1px solid #334155; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
+            <h2 style="color: #10b981; margin-top: 0; font-weight: 600;">✓ Connected Successfully</h2>
+            <p style="font-size: 14px; color: #94a3b8; line-height: 1.5;">Your Google Workspace Account has been securely mounted. This window will now self-terminate and resume your session.</p>
+            <script>
+              if (window.opener) {
+                window.opener.postMessage({ 
+                  type: 'GOOGLE_OAUTH_SUCCESS', 
+                  tokens: ${JSON.stringify(tokens)} 
+                }, '*');
+                setTimeout(() => window.close(), 1200);
+              } else {
+                window.location.href = '/';
+              }
+            </script>
+          </div>
+        </body>
+      </html>
+    `);
+
+  } catch (err: any) {
+    console.error("Auth callback exception during token exchange:", err);
+    res.status(500).send(`Internal Auth Callback Exception: ${err.message}`);
+  }
+});
+
+app.post("/api/gmail/ingest", async (req, res) => {
+  const { accessToken, searchQuery, maxResults } = req.body;
+  if (!accessToken) {
+    return res.status(400).json({ error: "Access Token is required to call Gmail endpoint." });
+  }
+
+  const query = searchQuery || "subject:(stock OR portfolio OR research OR ticker OR watchlist OR buy OR sell) OR from:leokoh75@gmail.com";
+  const limit = Math.min(Number(maxResults || 8), 12);
+
+  try {
+    const searchUrl = `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent(query)}&maxResults=${limit}`;
+    const listRes = await fetch(searchUrl, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        Accept: "application/json"
+      }
+    });
+
+    if (!listRes.ok) {
+      const errorText = await listRes.text();
+      console.warn("Gmail API listing error Response:", errorText);
+      return res.status(listRes.status).json({ 
+        error: `Failed to query your Gmail inbox. Error status: ${listRes.status}`, 
+        rawError: errorText 
+      });
+    }
+
+    const listData = await listRes.json() as any;
+    const messages = listData.messages || [];
+
+    if (messages.length === 0) {
+      return res.json({ success: true, count: 0, items: [] });
+    }
+
+    const detailPromises = messages.map(async (msg: any) => {
+      try {
+        const detailUrl = `https://gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}?format=full`;
+        const detailRes = await fetch(detailUrl, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            Accept: "application/json"
+          }
+        });
+
+        if (!detailRes.ok) return null;
+        const msgDetail = await detailRes.json();
+        
+        const headers = msgDetail.payload?.headers || [];
+        const subject = getHeader(headers, "subject");
+        const from = getHeader(headers, "from");
+        const date = getHeader(headers, "date");
+        const body = decodeGmailBody(msgDetail.payload);
+
+        return {
+          id: msg.id,
+          subject,
+          from,
+          date,
+          bodySnippet: body.slice(0, 1200) // snippet up to 1200 chars to avoid model bloating
+        };
+      } catch (err: any) {
+        console.warn(`Error compiling details for email ID ${msg.id}:`, err.message);
+        return null;
+      }
+    });
+
+    const parsedEmails = (await Promise.all(detailPromises)).filter(Boolean) as any[];
+
+    if (parsedEmails.length === 0) {
+      return res.json({ success: true, count: 0, items: [] });
+    }
+
+    const emailsBatchText = parsedEmails.map((email, idx) => `
+--- EMAIL #${idx + 1} ---
+ID: ${email.id}
+From: ${email.from}
+Subject: ${email.subject}
+Date: ${email.date}
+Snippet:
+${email.bodySnippet}
+--------------------
+`).join("\n");
+
+    const geminiPrompt = `You are a professional financial research analyst.
+Your objective is to scan a set of emails from the user's Gmail box, identify high-conviction stock tips or targets, and parse them into a structured database format.
+
+Here are the emails:
+${emailsBatchText}
+
+Examine each email snippet carefully. Identify which stock tickers (symbols like BUY, AAPL, NVDA, TSMC, AMD, TSM, etc.) are actually recommended or analyzed.
+Important: Ignore words that match tickers but are generic terms (e.g. "I", "A", "FOR", "NOW", "GO"). Only return authentic trade indicators or equity tickers.
+
+For each authentic stock idea you discover, extract the details precisely. 
+Return ONLY a valid JSON object structure conforming EXACTLY to this schema. Do NOT include markdown \`\`\`json blocks.
+
+Schema:
+{
+  "recommendations": [
+    {
+      "emailId": "string (the corresponding email ID from which this is extracted)",
+      "senderInfo": "string (name or email of sender)",
+      "date": "string (matching date of email)",
+      "ticker": "string (UPPERCASE stock symbol, e.g., TSM, AMD, AAPL)",
+      "companyName": "string (full company corporate name, e.g., AMD, Apple Inc.)",
+      "suggestedAction": "BUY" | "SELL" | "HOLD" | "NEUTRAL",
+      "targetPrice": number or null (price limit or targeted action threshold, if clearly specified),
+      "analysisSummary": "string (precise summary of the investment, risk rationale, or triggers mentioned, max 80 words)"
+    }
+  ]
+}
+
+If no real stock recommendations or analysis exists, return exactly:
+{ "recommendations": [] }`;
+
+    let extractedData = { recommendations: [] };
+    try {
+      const ai = getGeminiClient();
+      const response = await ai.models.generateContent({
+        model: "gemini-3.5-flash",
+        contents: geminiPrompt,
+        config: {
+          responseMimeType: "application/json",
+        }
+      });
+
+      const text = response.text || "{}";
+      const cleanedText = text.replace(/```json/g, "").replace(/```/g, "").trim();
+      extractedData = JSON.parse(cleanedText);
+    } catch (err: any) {
+      console.warn("Gemini failing to compile Gmail extract, applying regex fallback:", err.message);
+      // Clean regular expression parser fallback
+      const manuallyParsed: any[] = [];
+      const tickersRegex = /\b([A-Z]{2,5})\b/g;
+      
+      for (const email of parsedEmails) {
+        const fullTxt = `${email.subject} ${email.bodySnippet}`;
+        const matches = Array.from(fullTxt.matchAll(tickersRegex)).map(m => m[1]);
+        const uniqueMatches = Array.from(new Set(matches)).filter(t => 
+          !["UTC", "USD", "GMT", "BUY", "SELL", "HOLD", "NONE", "API", "HTML", "SMTP", "PORT"].includes(t)
+        );
+        
+        for (const t of uniqueMatches.slice(0, 2)) {
+          manuallyParsed.push({
+            emailId: email.id,
+            senderInfo: email.from,
+            date: email.date,
+            ticker: t,
+            companyName: `${t} Corporation`,
+            suggestedAction: "NEUTRAL",
+            targetPrice: null,
+            analysisSummary: `Spotted ticker ${t} in email: "${email.subject}". Review raw email detail in Gmail.`
+          });
+        }
+      }
+      extractedData = { recommendations: manuallyParsed };
+    }
+
+    return res.json({
+      success: true,
+      count: extractedData.recommendations?.length || 0,
+      items: extractedData.recommendations || [],
+      emailsFetchedCount: parsedEmails.length
+    });
+
+  } catch (err: any) {
+    console.error("Gmail Ingestion / Gemini processing exception:", err);
+    return res.status(500).json({ error: `Critical processing engine exception: ${err.message}` });
+  }
+});
+
+
+// 4. Programmable price alert email dispatcher (Nodemailer Service)
+app.post("/api/send-email", async (req, res) => {
+  const { ticker, currentPrice, targetPrice, condition, triggerType, email } = req.body;
+  
+  if (!ticker || currentPrice === undefined || targetPrice === undefined || !condition || !triggerType) {
+    return res.status(400).json({ error: "Missing required parameters (ticker, currentPrice, targetPrice, condition, triggerType)" });
+  }
+
+  const recipientEmail = email || process.env.DEFAULT_ALERT_EMAIL || "leokoh75@gmail.com";
+  const actionLabel = triggerType.toUpperCase() === "BUY" ? "🟢 BUY TRIGGER" : "🔴 SELL TRIGGER";
+  
+  const subject = `⚠️ [${actionLabel}] ${ticker.toUpperCase()} Alert: $${currentPrice.toFixed(2)}`;
+  
+  const textBody = `ALPHA PORTFOLIO Sentinels\n\nAsset: ${ticker.toUpperCase()}\nTrigger Type: ${triggerType.toUpperCase()}\nCondition configured: Price ${condition} $${targetPrice}\nLive Market Price: $${currentPrice.toFixed(2)}\nTrigger timestamp: ${new Date().toUTCString()}\n\nThis buy or sell trigger has crossed your critical margin settings. Please access the web dashboard to implement asymmetric risk revisions.`;
+
+  const htmlBody = `
+    <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #f0f0f0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.03);">
+      <div style="background-color: ${triggerType.toUpperCase() === 'BUY' ? '#10b981' : '#f43f5e'}; color: white; padding: 24px; text-align: center;">
+        <h1 style="margin: 0; font-size: 20px; font-weight: bold; letter-spacing: 0.5px; text-transform: uppercase;">
+          Equilibrium Sentinels Alert
+        </h1>
+        <p style="margin: 6px 0 0; font-size: 14px; opacity: 0.9;">
+          Real-Time Yahoo Finance Tracking
+        </p>
+      </div>
+      <div style="padding: 24px; background-color: #fafafa; color: #334155;">
+        <h2 style="margin-top: 0; color: #1e293b; font-size: 18px; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px; font-weight: 600;">
+          ${actionLabel} ACTIVATED
+        </h2>
+        
+        <table style="width: 100%; border-collapse: collapse; margin: 18px 0;">
+          <tr>
+            <td style="padding: 10px 0; font-size: 13px; color: #64748b; width: 40%;">Asset Ticker:</td>
+            <td style="padding: 10px 0; font-size: 14px; color: #0f172a; font-weight: bold;">${ticker.toUpperCase()}</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px 0; font-size: 13px; color: #64748b;">Trigger Category:</td>
+            <td style="padding: 10px 0; font-size: 14px; color: ${triggerType.toUpperCase() === 'BUY' ? '#10b981' : '#f43f5e'}; font-weight: bold; text-transform: uppercase;">
+              ${triggerType.toUpperCase()} TRIGGER
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 10px 0; font-size: 13px; color: #64748b;">Alert Condition:</td>
+            <td style="padding: 10px 0; font-size: 14px; color: #0f172a; font-family: monospace; font-weight: bold;">PRICE ${condition} $${targetPrice}</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px 0; font-size: 13px; color: #64748b;">Live Stock Price:</td>
+            <td style="padding: 10px 0; font-size: 16px; color: #4338ca; font-weight: bold;">$${currentPrice.toFixed(2)}</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px 0; font-size: 13px; color: #64748b;">UTC Trigger Time:</td>
+            <td style="padding: 10px 0; font-size: 13px; color: #334155; font-family: monospace;">${new Date().toUTCString()}</td>
+          </tr>
+        </table>
+        
+        <div style="background-color: #f1f5f9; border-left: 4px solid #4f46e5; padding: 12px 16px; border-radius: 4px; font-size: 12.5px; color: #475569; line-height: 1.5; margin-bottom: 24px;">
+          <strong>Sentinel Mandate:</strong> This notification has been dispatched autonomously from your custom monitoring sentinel pool. Market prices undergo automated scans against current indexes.
+        </div>
+        
+        <div style="text-align: center;">
+          <a href="${process.env.APP_URL || 'https://ai.studio/build'}" style="background-color: #4f46e5; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: bold; display: inline-block;">
+            Open Sentinel Dashboard
+          </a>
+        </div>
+      </div>
+      <div style="background-color: #f8fafc; text-align: center; padding: 16px; color: #94a3b8; font-size: 11px;">
+        This email was sent to ${recipientEmail} from your Equilibrium Alpha Sentinel Room.
+      </div>
+    </div>
+  `;
+
+  // Read SMTP Configurations
+  const smtpHost = process.env.SMTP_HOST;
+  const smtpPort = process.env.SMTP_PORT;
+  const smtpUser = process.env.SMTP_USER;
+  const smtpPass = process.env.SMTP_PASS;
+  const smtpFrom = process.env.SMTP_FROM || smtpUser || `"Sentinel Alerts" <alerts@equilibrium.app>`;
+
+  // Fallback direct browser mailto link
+  const mailtoBytes = `mailto:${recipientEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(textBody)}`;
+
+  if (!smtpHost || !smtpUser || !smtpPass) {
+    console.log(`SMTP configurations not completely set up. Logging mock dispatch for email: ${recipientEmail}`);
+    return res.json({
+      success: true,
+      senderType: "mock_smtp_log",
+      message: "Direct simulated server logs registered. Credentials omitted in config.",
+      emailSubject: subject,
+      emailBody: textBody,
+      mailtoBytes,
+      recipient: recipientEmail
+    });
+  }
+
+  try {
+    const transporter = nodemailer.createTransport({
+      host: smtpHost,
+      port: Number(smtpPort || 587),
+      secure: Number(smtpPort) === 465,
+      auth: {
+        user: smtpUser,
+        pass: smtpPass
+      }
+    });
+
+    console.log(`Delivering Stock Alert Email to ${recipientEmail} via SMTP Server: ${smtpHost}:${smtpPort}`);
+    const info = await transporter.sendMail({
+      from: smtpFrom,
+      to: recipientEmail,
+      subject: subject,
+      text: textBody,
+      html: htmlBody
+    });
+
+    return res.json({
+      success: true,
+      senderType: "nodemailer_smtp",
+      messageId: info.messageId,
+      message: "Email alert dispatched perfectly across standard SMTP transport layers!",
+      mailtoBytes,
+      recipient: recipientEmail
+    });
+  } catch (err: any) {
+    console.error("Nodemailer delivery exception:", err.message);
+    return res.json({
+      success: false,
+      senderType: "email_fallback_error",
+      error: err.message,
+      mailtoBytes,
+      recipient: recipientEmail,
+      emailSubject: subject,
+      emailBody: textBody
+    });
   }
 });
 
