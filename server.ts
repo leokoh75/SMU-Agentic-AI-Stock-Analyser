@@ -251,9 +251,170 @@ function generateGenericMock(ticker: string, name: string): any {
 // API ENDPOINTS
 // -------------------------------------------------------------
 
+// Yahoo Finance price helper
+async function fetchYahooFinancePrice(ticker: string) {
+  try {
+    const res = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d&range=1d`, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+      }
+    });
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}`);
+    }
+    const data = await res.json() as any;
+    const meta = data?.chart?.result?.[0]?.meta;
+    if (!meta) {
+      throw new Error("Invalid structure");
+    }
+    return {
+      currentPrice: meta.regularMarketPrice ?? meta.chartPreviousClose ?? 0,
+      high52w: meta.fiftyTwoWeekHigh ?? 0,
+      low52w: meta.fiftyTwoWeekLow ?? 0,
+      movingAverage50: meta.fiftyDayAverage ?? 0,
+      chartPreviousClose: meta.chartPreviousClose ?? 0
+    };
+  } catch (err: any) {
+    console.warn(`Failed to fetch Yahoo Finance for ${ticker}:`, err.message);
+    return null;
+  }
+}
+
+// Simple HTML decoder and tag stripper
+function decodeHTML(str: string): string {
+  return str
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/<[^>]+>/g, "")
+    .replace(/<!\[CDATA\[(.*?)\]\]>/g, "$1")
+    .trim();
+}
+
 // 1. Health check
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", mode: process.env.NODE_ENV, hasApiKey: !!API_KEY });
+});
+
+// 2. Sync Realtime Stock Prices (Yahoo Finance Free API Proxy)
+app.post("/api/sync-prices", async (req, res) => {
+  const { tickers } = req.body;
+  if (!Array.isArray(tickers)) {
+    return res.status(400).json({ error: "Tickers list must be an array" });
+  }
+
+  const prices: Record<string, any> = {};
+  for (const ticker of tickers) {
+    const cleanTicker = ticker.toUpperCase().trim();
+    const info = await fetchYahooFinancePrice(cleanTicker);
+    if (info) {
+      prices[cleanTicker] = info;
+    }
+  }
+
+  res.json({ success: true, prices });
+});
+
+// 3. Live Tech and Financial Macro News (Google News RSS Proxy featuring Yahoo Finance)
+app.get("/api/live-news", async (req, res) => {
+  try {
+    // We execute two queries:
+    // 1. One targeting Yahoo Finance exclusively for NVIDIA, TSM, semiconductors, custom silicon, baseload power, data centers, and advanced AI
+    const yahooUrl = "https://news.google.com/rss/search?q=site:finance.yahoo.com+(NVIDIA+OR+TSM+OR+semiconductors+OR+quantum+computing+OR+baseload+power)&hl=en-US&gl=US&ceid=US:en";
+    
+    // 2. One general market intelligence query
+    const generalUrl = "https://news.google.com/rss/search?q=NVIDIA+OR+TSM+OR+semiconductors+OR+quantum+computing+OR+baseload+power&hl=en-US&gl=US&ceid=US:en";
+
+    const fetchFeed = async (url: string, defaultSource: string, isYahooOnly: boolean) => {
+      try {
+        const response = await fetch(url, {
+          headers: {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+          }
+        });
+        if (!response.ok) return [];
+        const xml = await response.text();
+        const items = [];
+        const itemMatches = xml.matchAll(/<item>([\s\S]*?)<\/item>/g);
+        for (const match of itemMatches) {
+          const articleXml = match[1];
+          const titleRaw = articleXml.match(/<title>([\s\S]*?)<\/title>/)?.[1] || "";
+          const link = articleXml.match(/<link>([\s\S]*?)<\/link>/)?.[1] || "";
+          const pubDateRaw = articleXml.match(/<pubDate>([\s\S]*?)<\/pubDate>/)?.[1] || "";
+          const sourceRaw = articleXml.match(/<source[^>]*>([\s\S]*?)<\/source>/)?.[1] || defaultSource;
+          
+          const titleClean = decodeHTML(titleRaw);
+          const pubDateClean = decodeHTML(pubDateRaw);
+          const title = titleClean.replace(/\s+-\s+[^-\s]+$/, "");
+
+          items.push({
+            title: title || "Strategic Market Sector Event",
+            link: decodeHTML(link),
+            pubDate: pubDateClean ? new Date(pubDateClean).toISOString() : new Date().toISOString(),
+            source: isYahooOnly ? "Yahoo Finance" : decodeHTML(sourceRaw),
+            isYahooFinance: isYahooOnly || decodeHTML(sourceRaw).toLowerCase().includes("yahoo")
+          });
+        }
+        return items;
+      } catch (err) {
+        console.warn(`Failed to fetch rss feed ${url}:`, err);
+        return [];
+      }
+    };
+
+    const [yahooNews, generalNews] = await Promise.all([
+      fetchFeed(yahooUrl, "Yahoo Finance", true),
+      fetchFeed(generalUrl, "Global Market Intelligence", false)
+    ]);
+
+    // Merge and deduplicate by title or link
+    const merged: any[] = [];
+    const seenTitles = new Set<string>();
+
+    const addArticles = (articles: any[]) => {
+      for (const a of articles) {
+        const normalizedTitle = a.title.toLowerCase().trim();
+        if (!seenTitles.has(normalizedTitle)) {
+          seenTitles.add(normalizedTitle);
+          merged.push(a);
+        }
+      }
+    };
+
+    // Prioritize Yahoo Finance direct news at the top
+    addArticles(yahooNews);
+    addArticles(generalNews);
+
+    // Sort by pubDate descending
+    merged.sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime());
+
+    // Take top 16 articles
+    const topArticles = merged.slice(0, 16).map((item, index) => {
+      const displaySource = item.isYahooFinance ? "Yahoo Finance" : item.source;
+      const contentSnippet = item.isYahooFinance 
+        ? `[Direct Yahoo Finance Feed] Reported by ${displaySource}. This exclusive real-time financial briefing details critical tech supply-chain, compute foundry nodes, quantum progress, or gigawatt-scale cloud energy grids. Select this card below to invoke an instant Gemini AI sentiment impact analysis.`
+        : `Reported by ${displaySource}. This macro industry headline outlines strategic progress across cloud scale grids, custom accelerator fabrics, custom energy hubs, or foundry sectors. Select this card below to invoke an instant Gemini AI sentiment impact analysis.`;
+
+      return {
+        id: `news_live_${index}_${item.isYahooFinance ? 'yf' : 'gen'}`,
+        title: item.title,
+        link: item.link,
+        rawContent: contentSnippet,
+        timestamp: item.pubDate,
+        sentiment: "Neutral",
+        isYahooFinance: item.isYahooFinance,
+        source: displaySource,
+        analysisSummary: "Pending intelligence triage. Match event above to run specialized valuation models."
+      };
+    });
+
+    res.json({ success: true, news: topArticles });
+  } catch (err: any) {
+    console.error("Failed to fetch live RSS news:", err.message);
+    res.json({ success: false, error: err.message, news: [] });
+  }
 });
 
 // 2. Market Event Scanner

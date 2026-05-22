@@ -260,11 +260,71 @@ export function DashboardView({ stocks, events, onNavigate }: DashboardViewProps
             </p>
             <button 
               onClick={() => onNavigate("scanner")} 
-              className="text-3xs bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-1 px-2.5 rounded transition-colors"
+              className="text-3xs bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-1 px-2.5 rounded transition-colors block"
             >
               Analyze Macro News
             </button>
           </div>
+        </div>
+      </div>
+
+      {/* Data Citations & Resource Center */}
+      <div className="p-6 bg-slate-900 text-slate-100 rounded-xl border border-slate-800 shadow-sm space-y-4">
+        <div className="flex items-center gap-2 border-b border-slate-850 pb-3">
+          <Globe className="w-5 h-5 text-indigo-400" />
+          <div>
+            <h2 className="text-sm font-bold tracking-tight text-white font-sans uppercase">Asynchronous Alpha Data Feeds & Citation Registry</h2>
+            <p className="text-[10px] text-slate-400 mt-0.5">Disclosed real-time API bindings and algorithmic data compliance standards.</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-[11px]">
+          
+          <div className="space-y-1.5 p-3 rounded-lg bg-slate-850/50 border border-slate-800 flex flex-col justify-between">
+            <div>
+              <h3 className="font-mono font-bold text-teal-400 uppercase tracking-wider text-[10px]">Yahoo Finance v8 API</h3>
+              <p className="text-slate-400 mt-1 leading-snug">Yields real-time price indicators (regularMarketPrice, fiftyTwoWeekHigh, fiftyTwoWeekLow, and fiftyDayAverage) server-side via Node proxy.</p>
+            </div>
+            <div className="font-mono text-[9px] text-indigo-300 select-all underline leading-none pt-2">
+              https://query1.finance.yahoo.com
+            </div>
+          </div>
+
+          <div className="space-y-1.5 p-3 rounded-lg bg-slate-850/50 border border-slate-800 flex flex-col justify-between">
+            <div>
+              <h3 className="font-mono font-bold text-teal-400 uppercase tracking-wider text-[10px]">Google News RSS Feed</h3>
+              <p className="text-slate-400 mt-1 leading-snug">Streams live thematic intelligence headlines focused on specialized computing, foundry breakthroughs, quantum coherence, and baseload power.</p>
+            </div>
+            <div className="font-mono text-[9px] text-indigo-300 select-all underline leading-none pt-2">
+              https://news.google.com/rss
+            </div>
+          </div>
+
+          <div className="space-y-1.5 p-3 rounded-lg bg-slate-850/50 border border-slate-800 flex flex-col justify-between">
+            <div>
+              <h3 className="font-mono font-bold text-indigo-350 uppercase tracking-wider text-[10px]">Disqus Comments Hub</h3>
+              <p className="text-slate-400 mt-1 leading-snug">Empowers collaborative local-to-global strategy sharing. The widget loads on demand under international en_SG English Singapore rules.</p>
+            </div>
+            <div className="font-mono text-[9px] text-indigo-300 select-all underline leading-none pt-2">
+              https://disqus.com
+            </div>
+          </div>
+
+          <div className="space-y-1.5 p-3 rounded-lg bg-slate-850/50 border border-slate-800 flex flex-col justify-between">
+            <div>
+              <h3 className="font-mono font-bold text-amber-400 uppercase tracking-wider text-[10px]">DeepMind Gemini API</h3>
+              <p className="text-slate-400 mt-1 leading-snug">Produces professional institutional-grade stock scorecards, fundamental thesis checkpoints, and processes NLP macro events.</p>
+            </div>
+            <div className="font-mono text-[9px] text-indigo-300 select-all underline leading-none pt-2">
+              @google/genai (3.5-flash)
+            </div>
+          </div>
+
+        </div>
+
+        <div className="pt-2 border-t border-slate-850 flex flex-col sm:flex-row justify-between items-start sm:items-center text-[10px] text-slate-500 gap-2">
+          <span>Registered Watchlist Focus: TSM, NVDA, AMD, AVGO, MSFT, AMZN, GOOGL, EQIX, VST, IONQ, GS, ASML</span>
+          <span className="font-mono">Real-time Node proxy actively cached | Standard Singapore (SG) localization preset</span>
         </div>
       </div>
     </div>

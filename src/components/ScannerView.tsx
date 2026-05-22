@@ -303,19 +303,34 @@ export function ScannerView({ stocks, events, onAddEvent, onApplyStockImpacts }:
 
           {/* Event Logs History list */}
           <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm space-y-3">
-            <h3 className="text-xs font-semibold text-gray-900 border-b border-gray-50 pb-2">Scanned Event Logs ({events.length})</h3>
-            <div className="max-h-[220px] overflow-y-auto space-y-2.5 pr-2">
+            <h3 className="text-xs font-semibold text-gray-900 border-b border-gray-50 pb-2 flex justify-between items-center">
+              <span>Interactive Alpha Intelligence & Event Logs ({events.length})</span>
+              <span className="text-[10px] text-indigo-500 font-mono font-normal">Click any card to load into scanner</span>
+            </h3>
+            <div className="max-h-[260px] overflow-y-auto space-y-2.5 pr-2">
               {events.map((evt) => (
-                <div key={evt.id} className="p-3 bg-slate-50/50 hover:bg-slate-50 border border-slate-100 rounded-lg flex justify-between items-center text-3xs font-sans">
-                  <div className="space-y-1 pr-4">
-                    <p className="font-semibold text-gray-800 line-clamp-1">{evt.rawContent}</p>
-                    <div className="flex items-center gap-2 text-gray-400 font-mono">
+                <div 
+                  key={evt.id} 
+                  onClick={() => setInputText(`${evt.title}: ${evt.rawContent.replace(/\[Direct Yahoo Finance Feed\]\s*/i, "")}`)}
+                  className="p-3 bg-slate-50/50 hover:bg-slate-50 hover:border-indigo-150 border border-slate-100 rounded-lg flex justify-between items-center text-3xs font-sans cursor-pointer transition-all hover:shadow-2xs active:scale-[0.99]"
+                >
+                  <div className="space-y-1.5 pr-4 flex-1">
+                    <p className="font-semibold text-gray-800 line-clamp-2 leading-relaxed">{evt.title || evt.rawContent}</p>
+                    <div className="flex flex-wrap items-center gap-2 text-gray-400 font-mono text-[9px]">
                       <span>{new Date(evt.timestamp).toLocaleDateString()}</span>
                       <span>•</span>
-                      <span>Sectors affected: {evt.impactedSectors?.map(s => s.sector).join(", ") || "General"}</span>
+                      {evt.isYahooFinance ? (
+                        <span className="px-1.5 py-0.5 bg-purple-100 text-purple-700 font-bold rounded-sm uppercase tracking-wider text-[8px] animate-pulse">
+                          Yahoo Finance Live
+                        </span>
+                      ) : (
+                        <span>Source: {evt.source || "Global Alert Feed"}</span>
+                      )}
+                      <span>•</span>
+                      <span>Sectors: {evt.impactedSectors?.map(s => s.sector).join(", ") || "General"}</span>
                     </div>
                   </div>
-                  <span className={`px-2 py-0.5 rounded font-mono font-semibold uppercase ${sentimentColor(evt.sentiment || "Neutral")}`}>
+                  <span className={`px-2 py-0.5 rounded font-mono font-semibold uppercase leading-none text-[9px] shrink-0 ${sentimentColor(evt.sentiment || "Neutral")}`}>
                     {evt.sentiment || "Neutral"}
                   </span>
                 </div>

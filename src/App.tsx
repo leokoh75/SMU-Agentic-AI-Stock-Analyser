@@ -119,9 +119,97 @@ export default function App() {
     }
   };
 
+  const [isSyncingPrices, setIsSyncingPrices] = useState<boolean>(false);
+  const [isSyncingNews, setIsSyncingNews] = useState<boolean>(false);
+  const [newsError, setNewsError] = useState<string | null>(null);
+
+  const loadLiveNews = async () => {
+    setIsSyncingNews(true);
+    setNewsError(null);
+    try {
+      const response = await fetch("/api/live-news");
+      const data = await response.json();
+      if (data && data.success && Array.isArray(data.news)) {
+        setEvents((prev) => {
+          const existingIds = new Set(prev.map(e => e.id));
+          const filteredNews = data.news.filter((item: any) => !existingIds.has(item.id));
+          return [...filteredNews, ...prev];
+        });
+      } else {
+        setNewsError(data?.error || "Failed to process live RSS stream");
+      }
+    } catch (err: any) {
+      console.warn("Live headlines RSS fetch error in frontend:", err);
+      // Suppress alert so background load doesn't disturb user
+      setNewsError(err.message);
+    } finally {
+      setIsSyncingNews(false);
+    }
+  };
+
+  const handleSyncPrices = async () => {
+    if (isSyncingPrices || stocks.length === 0) {
+      alert("No stocks currently selected or synchronization is already underway.");
+      return;
+    }
+    setIsSyncingPrices(true);
+    try {
+      const tickers = stocks.map(s => s.ticker);
+      const res = await fetch("/api/sync-prices", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tickers })
+      });
+      const data = await res.json();
+      if (data && data.success && data.prices) {
+        setStocks((prev) => {
+          const updated = prev.map(s => {
+            const live = data.prices[s.ticker];
+            if (live) {
+              return {
+                ...s,
+                stats: {
+                  ...s.stats,
+                  currentPrice: Number(live.currentPrice.toFixed(2)),
+                  high52w: Number(live.high52w.toFixed(2)),
+                  low52w: Number(live.low52w.toFixed(2)),
+                  movingAverage50: Number(live.movingAverage50.toFixed(2))
+                }
+              };
+            }
+            return s;
+          });
+          
+          // Non-blocking sync to Supabase table
+          updated.forEach(async (item) => {
+            await supabase
+              .from("entries")
+              .insert([{ text: JSON.stringify(item), author: item.ticker }]);
+          });
+          
+          return updated;
+        });
+        alert("Yahoo Finance live stock prices and moving averages synchronized successfully!");
+      } else {
+        alert("Live stock pricing endpoint didn't return any data. Using static fallbacks.");
+      }
+    } catch (err) {
+      console.error("Failed to sync current prices:", err);
+      alert("Pricing sync API currently offline. Reverting to high-fidelity presets.");
+    } finally {
+      setIsSyncingPrices(false);
+    }
+  };
+
   // Setup Supabase live update subscription and fetch initial list
   useEffect(() => {
     loadStocksFromSupabase();
+    loadLiveNews();
+
+    // Set up a recurring interval to fetch news every 15 minutes (15 * 60 * 1000 ms)
+    const newsInterval = setInterval(() => {
+      loadLiveNews();
+    }, 15 * 60 * 1000);
 
     // Setup active real-time channel synchronizing updates across clients
     const channel = supabase
@@ -161,6 +249,7 @@ export default function App() {
       .subscribe();
 
     return () => {
+      clearInterval(newsInterval);
       supabase.removeChannel(channel);
     };
   }, []);
@@ -346,6 +435,19 @@ export default function App() {
           </button>
 
           <button
+            onClick={handleSyncPrices}
+            disabled={isSyncingPrices}
+            className={`px-3 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 border ml-1.5 hover:shadow-md ${
+              isSyncingPrices 
+                ? "bg-slate-850 text-slate-500 border-slate-800" 
+                : "bg-emerald-950/40 hover:bg-emerald-900/30 text-emerald-300 border-emerald-500/30 font-semibold"
+            }`}
+          >
+            <TrendingUp className={`w-3.5 h-3.5 ${isSyncingPrices ? "animate-spin" : ""}`} />
+            {isSyncingPrices ? "Syncing..." : "Sync Live Prices"}
+          </button>
+
+          <button
             onClick={() => setShowDiscussion(true)}
             className="px-3 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-teal-300 border border-slate-700 ml-1.5"
           >
@@ -364,6 +466,15 @@ export default function App() {
 
         {/* Quick Help / Disqus Button - Streamlined for Mobile Navbar right side to maximize touch accessibility */}
         <div className="md:hidden flex gap-1.5 items-center bg-slate-800 rounded-xl px-2 py-1 border border-slate-750 max-h-[40px]">
+          <button
+            onClick={handleSyncPrices}
+            disabled={isSyncingPrices}
+            className="px-2 py-1 flex items-center gap-1 text-emerald-400 hover:text-white transition-colors cursor-pointer"
+          >
+            <TrendingUp className={`w-3 h-3 ${isSyncingPrices ? "animate-spin" : ""}`} />
+            <span className="text-[10px] uppercase font-extrabold leading-none">{isSyncingPrices ? "Sync" : "Sync"}</span>
+          </button>
+          <div className="w-px bg-slate-700 self-stretch my-1" />
           <button
             onClick={() => setShowDiscussion(true)}
             className="px-2 py-1 flex items-center gap-1 text-teal-300 hover:text-white transition-colors cursor-pointer"

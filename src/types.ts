@@ -90,4 +90,6 @@ export interface MarketEvent {
   analysisSummary?: string;
   impactedSectors?: { sector: string; impact: "Positive"; rationale: string }[];
   stockImpacts?: { ticker: string; impact: "Positive" | "Neutral" | "Negative"; analysis: string }[];
+  isYahooFinance?: boolean;
+  source?: string;
 }
