@@ -12,6 +12,7 @@ import { PortfolioView } from "./components/PortfolioView";
 import { ChartView } from "./components/ChartView";
 import { ThesisView } from "./components/ThesisView";
 import { OutlierRecommendationsView } from "./components/OutlierRecommendationsView";
+import { supabase } from "./lib/supabase";
 
 // Lucide icons
 import { 
@@ -38,61 +39,179 @@ export default function App() {
   const [events, setEvents] = useState<MarketEvent[]>(defaultMarketEvents);
   const [selectedTicker, setSelectedTicker] = useState<string | null>(null);
 
-  // Initialize stocks from LocalStorage if they exist, else seed defaults
-  useEffect(() => {
-    const cached = localStorage.getItem("equilibrium_stocks");
-    if (cached) {
-      try {
-        let loaded = JSON.parse(cached);
-        if (Array.isArray(loaded)) {
-          const tickersInLoaded = new Set(loaded.map((s: any) => s.ticker));
-          const missingDefaults = defaultStocks.filter(s => !tickersInLoaded.has(s.ticker));
-          if (missingDefaults.length > 0) {
-            loaded = [...loaded, ...missingDefaults];
-            localStorage.setItem("equilibrium_stocks", JSON.stringify(loaded));
-          }
-          setStocks(loaded);
-        } else {
-          setStocks(defaultStocks);
-        }
-      } catch (e) {
+  // Fetch stocks from Supabase and sync local state
+  const loadStocksFromSupabase = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("entries")
+        .select("*")
+        .order("id", { ascending: true });
+
+      if (error) {
+        console.error("Error fetching stocks from Supabase:", error);
         setStocks(defaultStocks);
+        return;
       }
-    } else {
+
+      if (!data || data.length === 0) {
+        console.log("Supabase entries table is empty. Seeding defaults...");
+        const seedRows = defaultStocks.map((stock) => ({
+          text: JSON.stringify(stock),
+          author: stock.ticker,
+        }));
+        const { error: seedError } = await supabase.from("entries").insert(seedRows);
+        if (seedError) {
+          console.error("Failed to seed default stocks:", seedError);
+        }
+        setStocks(defaultStocks);
+        return;
+      }
+
+      // Build a map of the latest entry for each stock ticker (grouped by author)
+      const stockMap = new Map<string, Stock | null>();
+      for (const row of data) {
+        if (!row.author || !row.text) continue;
+        const ticker = row.author;
+        if (row.text === "DELETED") {
+          stockMap.set(ticker, null);
+        } else {
+          try {
+            const stock = JSON.parse(row.text) as Stock;
+            stockMap.set(ticker, stock);
+          } catch (e) {
+            // Gracefully ignore rows with invalid JSON layouts (e.g. diagnostic strings)
+          }
+        }
+      }
+
+      const activeStocks: Stock[] = [];
+      for (const [_, stock] of stockMap.entries()) {
+        if (stock) {
+          activeStocks.push(stock);
+        }
+      }
+
+      if (activeStocks.length === 0) {
+        console.log("No valid active stocks found. Seeding defaults...");
+        const seedRows = defaultStocks.map((stock) => ({
+          text: JSON.stringify(stock),
+          author: stock.ticker,
+        }));
+        await supabase.from("entries").insert(seedRows);
+        setStocks(defaultStocks);
+      } else {
+        setStocks(activeStocks);
+      }
+    } catch (err) {
+      console.error("Unexpected error in loadStocksFromSupabase:", err);
       setStocks(defaultStocks);
     }
-  }, []);
-
-  // Save changes to cache when stocks update
-  const handleUpdateStocks = (updated: Stock[]) => {
-    setStocks(updated);
-    localStorage.setItem("equilibrium_stocks", JSON.stringify(updated));
   };
 
-  const handleAddStock = (newStock: Stock) => {
-    // Avoid duplicates
+  // Setup Supabase live update subscription and fetch initial list
+  useEffect(() => {
+    loadStocksFromSupabase();
+
+    // Setup active real-time channel synchronizing updates across clients
+    const channel = supabase
+      .channel("entries_realtime_changes")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "entries" },
+        (payload) => {
+          if (payload.eventType === "INSERT" || payload.eventType === "UPDATE") {
+            const newRow = payload.new;
+            if (newRow && newRow.author) {
+              const ticker = newRow.author;
+              if (newRow.text === "DELETED") {
+                setStocks((prev) => prev.filter((s) => s.ticker !== ticker));
+              } else {
+                try {
+                  const updatedStock = JSON.parse(newRow.text) as Stock;
+                  setStocks((prev) => {
+                    const exists = prev.some((s) => s.ticker === ticker);
+                    if (exists) {
+                      return prev.map((s) => (s.ticker === ticker ? updatedStock : s));
+                    } else {
+                      return [updatedStock, ...prev];
+                    }
+                  });
+                } catch (e) {
+                  console.error("Failed to parse real-time stock payload:", e);
+                }
+              }
+            }
+          } else if (payload.eventType === "DELETE") {
+            // Trigger a full list reload to check for missing rows
+            loadStocksFromSupabase();
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const handleAddStock = async (newStock: Stock) => {
+    // Avoid local duplicates before requesting network insert
     if (stocks.some((s) => s.ticker === newStock.ticker)) {
       alert(`${newStock.ticker} is already registered in watchlist.`);
       return;
     }
-    const next = [newStock, ...stocks];
-    handleUpdateStocks(next);
+    const { error } = await supabase
+      .from("entries")
+      .insert([{ text: JSON.stringify(newStock), author: newStock.ticker }]);
+    if (error) {
+      console.error("Failed to add stock to Supabase:", error);
+    }
   };
 
-  const handleUpdateStock = (updatedStock: Stock) => {
-    const next = stocks.map((s) => (s.ticker === updatedStock.ticker ? updatedStock : s));
-    handleUpdateStocks(next);
+  const handleUpdateStock = async (updatedStock: Stock) => {
+    const { error } = await supabase
+      .from("entries")
+      .insert([{ text: JSON.stringify(updatedStock), author: updatedStock.ticker }]);
+    if (error) {
+      console.error("Failed to update stock in Supabase:", error);
+    }
   };
 
-  const handleRemoveStock = (ticker: string) => {
-    const next = stocks.filter((s) => s.ticker !== ticker);
-    handleUpdateStocks(next);
+  const handleRemoveStock = async (ticker: string) => {
+    const { error } = await supabase
+      .from("entries")
+      .insert([{ text: "DELETED", author: ticker }]);
+    if (error) {
+      console.error("Failed to remove stock from Supabase:", error);
+    }
   };
 
-  const handleRestoreDefaults = () => {
+  const handleRestoreDefaults = async () => {
     if (confirm("Reset current watchlist to default sample focus stocks? Any custom scores/decisions will be reset.")) {
-      handleUpdateStocks(defaultStocks);
-      setSelectedTicker(defaultStocks[0].ticker);
+      // Clear previous rows from table
+      const { error: deleteError } = await supabase
+        .from("entries")
+        .delete()
+        .gt("id", 0);
+
+      if (deleteError) {
+        console.error("Failed to clear entries on restore defaults:", deleteError);
+      }
+
+      // Bulk insert default stocks
+      const seedRows = defaultStocks.map((stock) => ({
+        text: JSON.stringify(stock),
+        author: stock.ticker,
+      }));
+      const { error: insertError } = await supabase.from("entries").insert(seedRows);
+      if (insertError) {
+        console.error("Failed to insert seeding defaults:", insertError);
+      }
+
+      await loadStocksFromSupabase();
+      if (defaultStocks.length > 0) {
+        setSelectedTicker(defaultStocks[0].ticker);
+      }
     }
   };
 
