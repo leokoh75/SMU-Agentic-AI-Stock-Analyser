@@ -13,6 +13,7 @@ import { ChartView } from "./components/ChartView";
 import { ThesisView } from "./components/ThesisView";
 import { OutlierRecommendationsView } from "./components/OutlierRecommendationsView";
 import { supabase } from "./lib/supabase";
+import { DiscussionEmbed } from 'disqus-react';
 
 // Lucide icons
 import { 
@@ -28,13 +29,23 @@ import {
   Fingerprint,
   BookOpen,
   Zap,
-  MoreHorizontal
+  MoreHorizontal,
+  MessageSquare
 } from "lucide-react";
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<string>("dashboard");
   const [showGlossary, setShowGlossary] = useState<boolean>(false);
+  const [showDiscussion, setShowDiscussion] = useState<boolean>(false);
   const [showMoreMenu, setShowMoreMenu] = useState<boolean>(false);
+
+  const commentsProps = {
+    article: {
+      url: typeof window !== "undefined" ? window.location.href : "https://smu-agentic-ai-stock-analyse.com",
+      id: "smu-agentic-ai-stock-analyse-comments-hub-v2",
+      title: "SMU Agentic AI Stock Analyse Discussion Hub"
+    }
+  };
   const [stocks, setStocks] = useState<Stock[]>([]);
   const [events, setEvents] = useState<MarketEvent[]>(defaultMarketEvents);
   const [selectedTicker, setSelectedTicker] = useState<string | null>(null);
@@ -335,6 +346,14 @@ export default function App() {
           </button>
 
           <button
+            onClick={() => setShowDiscussion(true)}
+            className="px-3 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-teal-300 border border-slate-700 ml-1.5"
+          >
+            <MessageSquare className="w-3.5 h-3.5" />
+            Live Comments
+          </button>
+
+          <button
             onClick={() => setShowGlossary(true)}
             className="px-3 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-teal-300 border border-slate-700 ml-1.5"
           >
@@ -343,14 +362,24 @@ export default function App() {
           </button>
         </nav>
 
-        {/* Quick Help Button - Streamlined for Mobile Navbar right side to maximize touch accessibility */}
-        <button
-          onClick={() => setShowGlossary(true)}
-          className="md:hidden px-3 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-1 bg-slate-800 hover:bg-slate-750 text-teal-300 border border-slate-750 text-4xs uppercase font-extrabold max-h-[40px]"
-        >
-          <BookOpen className="w-3.5 h-3.5" />
-          Glossary
-        </button>
+        {/* Quick Help / Disqus Button - Streamlined for Mobile Navbar right side to maximize touch accessibility */}
+        <div className="md:hidden flex gap-1.5 items-center bg-slate-800 rounded-xl px-2 py-1 border border-slate-750 max-h-[40px]">
+          <button
+            onClick={() => setShowDiscussion(true)}
+            className="px-2 py-1 flex items-center gap-1 text-teal-300 hover:text-white transition-colors cursor-pointer"
+          >
+            <MessageSquare className="w-3.5 h-3.5" />
+            <span className="text-[10px] uppercase font-extrabold leading-none">Comments</span>
+          </button>
+          <div className="w-px bg-slate-700 self-stretch my-1" />
+          <button
+            onClick={() => setShowGlossary(true)}
+            className="px-2 py-1 flex items-center gap-1 text-teal-300 hover:text-white transition-colors cursor-pointer"
+          >
+            <BookOpen className="w-3.5 h-3.5" />
+            <span className="text-[10px] uppercase font-extrabold leading-none">Glossary</span>
+          </button>
+        </div>
       </header>
 
       {/* Primary viewport content - Balanced spacing with safe margins preventing bottom dock coverage */}
@@ -549,18 +578,18 @@ export default function App() {
         </div>
       </footer>
 
-      {/* GLOBAL BEGINNER GLOSSARY MODAL */}
+      {/* GLOBAL BEGINNER GLOSSARY MODAL WITH DISQUS INTEGRATION */}
       {showGlossary && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-150 shadow-2xl flex flex-col justify-between">
+          <div className="bg-white rounded-2xl max-w-6xl w-full max-h-[90vh] border border-gray-150 shadow-2xl flex flex-col overflow-hidden">
             
             {/* Modal Header */}
-            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-indigo-950 text-white rounded-t-2xl">
+            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-indigo-950 text-white shrink-0">
               <div className="flex items-center gap-2">
-                <BookOpen className="w-5 h-5 text-teal-400" />
+                <BookOpen className="w-5 h-5 text-teal-400 font-bold" />
                 <div>
-                  <h3 className="text-sm font-bold tracking-tight">Beginner Investment Glossary</h3>
-                  <p className="text-4xs text-slate-300 font-sans mt-0.5">We explain professional and technical concepts in extremely simple, friendly terms.</p>
+                  <h3 className="text-sm font-bold tracking-tight">Equilibrium Knowledge & Discussion Hub</h3>
+                  <p className="text-4xs text-slate-300 font-sans mt-0.5">Learn trading definitions and post comments or strategy ideas live with your peers.</p>
                 </div>
               </div>
               <button 
@@ -571,99 +600,184 @@ export default function App() {
               </button>
             </div>
 
-            {/* Modal Content */}
-            <div className="p-6 space-y-5 font-sans divide-y divide-gray-100">
+            {/* Modal Body / Split screen columns */}
+            <div className="flex-1 overflow-y-auto grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-gray-150">
               
-              <div className="space-y-1 pt-0">
-                <h4 className="text-xs font-bold text-slate-900 flex items-center gap-1.5 pt-0">
-                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 block" />
-                  Stock Connection / Correlation 
-                  <span className="text-4xs font-mono font-bold text-indigo-500 uppercase bg-indigo-50 px-1.5 py-0.5 rounded ml-2">r Value</span>
+              {/* Left Column: Beginner Investment Glossary */}
+              <div className="p-6 space-y-5 font-sans divide-y divide-gray-100 overflow-y-auto max-h-[45vh] md:max-h-full">
+                <h4 className="text-3xs uppercase font-extrabold tracking-wider text-slate-400 font-mono pb-2">
+                  Part 1: Trading Concept Help
                 </h4>
-                <p className="text-3xs text-gray-650 leading-relaxed">
-                  <strong>What it means:</strong> A "friendship score" that shows if two stocks dance to the exact same tune. 
-                  If Stock A goes up and Stock B always climbs right along with it, they have a strong positive correlation (+1 is a perfect match!). Zero means they are totally independent.
-                </p>
+
+                <div className="space-y-1 pt-3">
+                  <h4 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 block flex-shrink-0" />
+                    Stock Connection / Correlation 
+                    <span className="text-[9px] font-mono font-bold text-indigo-500 uppercase bg-indigo-50 px-1.5 py-0.5 rounded ml-auto">r Value</span>
+                  </h4>
+                  <p className="text-3xs text-gray-600 leading-relaxed">
+                    <strong>What it means:</strong> A "friendship score" that shows if two stocks dance to the exact same tune. 
+                    If Stock A goes up and Stock B always climbs right along with it, they have a strong positive correlation (+1 is a perfect match!). Zero means they are totally independent.
+                  </p>
+                </div>
+
+                <div className="space-y-1 pt-4">
+                  <h4 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 block flex-shrink-0" />
+                    Stock Price Outliers
+                    <span className="text-[9px] font-mono font-bold text-teal-600 uppercase bg-teal-50 px-1.5 py-0.5 rounded ml-auto">Outlier</span>
+                  </h4>
+                  <p className="text-3xs text-gray-600 leading-relaxed">
+                    <strong>What it means:</strong> Think of a stock's price like a rubber band centered around its historical average. 
+                    When the price gets stretched way too high or too low, we call it an "outlier". Low outliers are heavily discounted and often make amazing buying opportunities!
+                  </p>
+                </div>
+
+                <div className="space-y-1 pt-4">
+                  <h4 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 block flex-shrink-0" />
+                    Normal Boundaries / Standard Deviation
+                    <span className="text-[9px] font-mono font-bold text-indigo-500 uppercase bg-indigo-50 px-1.5 py-0.5 rounded ml-auto">Sigma &sigma;</span>
+                  </h4>
+                  <p className="text-3xs text-gray-600 leading-relaxed">
+                    <strong>What it means:</strong> The standard boundary limits within which a stock's price normally trades. 
+                    Crossing these boundaries is unusual and signals that a stock is either historically cheap (buying opportunity) or overheated (selling opportunity).
+                  </p>
+                </div>
+
+                <div className="space-y-1 pt-4">
+                  <h4 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 block flex-shrink-0" />
+                    Deviation Score / Z-Score
+                    <span className="text-[9px] font-mono font-bold text-indigo-500 uppercase bg-indigo-50 px-1.5 py-0.5 rounded ml-auto">Z-Score</span>
+                  </h4>
+                  <p className="text-3xs text-gray-600 leading-relaxed">
+                    <strong>What it means:</strong> A helper count showing just how far todays price has wandered away from its historical average. 
+                    A score of +1.5 means the price is unusually expensive, while -1.5 means the price is unusually cheap and highly discounted.
+                  </p>
+                </div>
+
+                <div className="space-y-1 pt-4">
+                  <h4 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 block flex-shrink-0" />
+                    Shared Trend Fit
+                    <span className="text-[9px] font-mono font-bold text-indigo-500 uppercase bg-indigo-50 px-1.5 py-0.5 rounded ml-auto">R-Squared R²</span>
+                  </h4>
+                  <p className="text-3xs text-gray-600 leading-relaxed">
+                    <strong>What it means:</strong> Explains what percentage of the companion stock's prices are directly tied to or driven by the main tech stock. 
+                    For example, an R² of 85% means that 85% of the helper stock's changes happen because of trends in the main stock!
+                  </p>
+                </div>
+
+                <div className="space-y-1 pt-4">
+                  <h4 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 block flex-shrink-0" />
+                    Amplification Multiplier
+                    <span className="text-[9px] font-mono font-bold text-indigo-500 uppercase bg-indigo-50 px-1.5 py-0.5 rounded ml-auto">Beta &beta;</span>
+                  </h4>
+                  <p className="text-3xs text-gray-600 leading-relaxed">
+                    <strong>What it means:</strong> An amplification score. 
+                    If a complementary helper stock has a Beta of 1.5, it normally swings 50% wider/further than the main stock when prices move, creating higher percentage opportunities.
+                  </p>
+                </div>
+
+                <div className="space-y-1 pt-4">
+                  <h4 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 block flex-shrink-0" />
+                    Co-Integration
+                    <span className="text-[9px] font-mono font-bold text-indigo-500 uppercase bg-indigo-50 px-1.5 py-0.5 rounded ml-auto">Co-Int</span>
+                  </h4>
+                  <p className="text-3xs text-gray-600 leading-relaxed">
+                    <strong>What it means:</strong> Describes two stocks that are tethered together in the real-world utility or supply chain. This means even if they wander apart temporarily, they will always move back together soon.
+                  </p>
+                </div>
               </div>
 
-              <div className="space-y-1 pt-4">
-                <h4 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 block" />
-                  Stock Price Outliers
-                </h4>
-                <p className="text-3xs text-gray-650 leading-relaxed">
-                  <strong>What it means:</strong> Think of a stock's price like a rubber band centered around its historical average. 
-                  When the price gets stretched way too high or too low, we call it an "outlier". Low outliers are heavily discounted and often make amazing buying opportunities!
-                </p>
-              </div>
+              {/* Right Column: Disqus Live Comments Widget */}
+              <div className="p-6 bg-slate-50 overflow-y-auto max-h-[45vh] md:max-h-full flex flex-col justify-start">
+                <div className="flex items-center gap-2 border-b border-gray-200 pb-3 mb-4 shrink-0">
+                  <MessageSquare className="w-5 h-5 text-indigo-600" />
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-950 font-sans">Part 2: Community Discussion Feed</h4>
+                    <p className="text-4xs text-slate-400 font-sans">Disqus widget • Traditional Chinese zh_TW preset enabled</p>
+                  </div>
+                </div>
 
-              <div className="space-y-1 pt-4">
-                <h4 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 block" />
-                  Normal Boundaries / Standard Deviation
-                  <span className="text-4xs font-mono font-bold text-indigo-500 uppercase bg-indigo-50 px-1.5 py-0.5 rounded ml-2">Sigma &sigma;</span>
-                </h4>
-                <p className="text-3xs text-gray-650 leading-relaxed">
-                  <strong>What it means:</strong> The standard boundary limits within which a stock's price normally trades. 
-                  Crossing these boundaries is unusual and signals that a stock is either historically cheap (buying opportunity) or overheated (selling opportunity).
-                </p>
-              </div>
-
-              <div className="space-y-1 pt-4">
-                <h4 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 block" />
-                  Deviation Score / Z-Score
-                  <span className="text-4xs font-mono font-bold text-indigo-500 uppercase bg-indigo-50 px-1.5 py-0.5 rounded ml-2">Z-Score</span>
-                </h4>
-                <p className="text-3xs text-gray-650 leading-relaxed">
-                  <strong>What it means:</strong> A helper count showing just how far todays price has wandered away from its historical average. 
-                  A score of +1.5 means the price is unusually expensive, while -1.5 means the price is unusually cheap and highly discounted.
-                </p>
-              </div>
-
-              <div className="space-y-1 pt-4">
-                <h4 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 block" />
-                  Shared Trend Fit
-                  <span className="text-4xs font-mono font-bold text-indigo-500 uppercase bg-indigo-50 px-1.5 py-0.5 rounded ml-2">R-Squared R²</span>
-                </h4>
-                <p className="text-3xs text-gray-650 leading-relaxed">
-                  <strong>What it means:</strong> Explains what percentage of the companion stock's prices are directly tied to or driven by the main tech stock. 
-                  For example, an R² of 85% means that 85% of the helper stock's changes happen because of trends in the main stock!
-                </p>
-              </div>
-
-              <div className="space-y-1 pt-4">
-                <h4 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 block" />
-                  Amplification Multiplier
-                  <span className="text-4xs font-mono font-bold text-indigo-500 uppercase bg-indigo-50 px-1.5 py-0.5 rounded ml-2">Beta &beta;</span>
-                </h4>
-                <p className="text-3xs text-gray-650 leading-relaxed">
-                  <strong>What it means:</strong> An amplification score. 
-                  If a complementary helper stock has a Beta of 1.5, it normally swings 50% wider/further than the main stock when prices move, creating higher percentage opportunities.
-                </p>
-              </div>
-
-              <div className="space-y-1 pt-4">
-                <h4 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 block" />
-                  Co-Integration
-                </h4>
-                <p className="text-3xs text-gray-650 leading-relaxed">
-                  <strong>What it means:</strong> Describes two stocks that are tethered together in the real-world utility or supply chain. This means even if they wander apart temporarily, they will always move back together soon.
-                </p>
+                <div className="bg-white p-4 rounded-xl border border-gray-150 shadow-xs flex-1 min-h-[300px]">
+                  <DiscussionEmbed
+                    shortname="smu-agentic-ai-stock-analyse"
+                    config={{
+                      url: typeof window !== "undefined" ? window.location.href : "https://smu-agentic-ai-stock-analyse.com",
+                      identifier: "smu-agentic-ai-stock-analyse-comments-v1",
+                      title: "SMU Agentic AI Stock Analyse Discussion Hub",
+                      language: "zh_TW"
+                    }}
+                  />
+                </div>
               </div>
 
             </div>
 
             {/* Modal Footer */}
-            <div className="p-4 bg-gray-50 border-t border-gray-150 rounded-b-2xl text-center">
+            <div className="p-4 bg-gray-50 border-t border-gray-150 rounded-b-2xl text-center shrink-0">
               <button 
                 onClick={() => setShowGlossary(false)}
                 className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-3xs font-mono uppercase tracking-wider font-bold shadow cursor-pointer transition-all"
               >
-                Got it, let's trade!
+                Got it, close hub!
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* DISQUS DISCUSSIONS OVERLAY SECTION */}
+      {showDiscussion && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] border border-gray-150 shadow-2xl flex flex-col overflow-hidden">
+            
+            {/* Modal Header */}
+            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-indigo-950 text-white shrink-0">
+              <div className="flex items-center gap-2">
+                <MessageSquare className="w-5 h-5 text-teal-400 font-bold" />
+                <div>
+                  <h3 className="text-sm font-bold tracking-tight">Equilibrium Community Strategy Hub</h3>
+                  <p className="text-4xs text-slate-300 font-sans mt-0.5">Exchange strategies with other traders. Traditional Chinese language translation is enabled.</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowDiscussion(false)}
+                className="text-slate-300 hover:text-white px-2.5 py-1 text-3xs font-bold uppercase hover:bg-white/10 rounded-lg cursor-pointer transition-all"
+              >
+                Close
+              </button>
+            </div>
+
+            {/* Modal Body / Comments Section */}
+            <div className="flex-1 overflow-y-auto p-6 bg-slate-50">
+              <div className="bg-white p-6 md:p-8 rounded-2xl border border-gray-150 shadow-xs">
+                <DiscussionEmbed
+                  shortname='smu-agentic-ai-stock-analyse'
+                  config={
+                    {
+                      url: commentsProps.article.url,
+                      identifier: commentsProps.article.id,
+                      title: commentsProps.article.title,
+                      language: 'zh_TW' //e.g. for Traditional Chinese (Taiwan)
+                    }
+                  }
+                />
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 bg-gray-50 border-t border-gray-150 rounded-b-2xl text-center shrink-0">
+              <button 
+                onClick={() => setShowDiscussion(false)}
+                className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-3xs font-mono uppercase tracking-wider font-bold shadow cursor-pointer transition-all"
+              >
+                Got it, let's discuss!
               </button>
             </div>
 
