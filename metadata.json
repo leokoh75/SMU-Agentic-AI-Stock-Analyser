@@ -1,0 +1,6 @@
+{
+  "name": "Equilibrium: Stock Screen & Portfolio Decision Suite",
+  "description": "An AI-assisted stock screening and portfolio decision app focused on AI, quantum computing, data centres, semiconductors, and energy stocks to evaluate asymmetric investment decisions.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
