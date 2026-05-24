@@ -167,10 +167,15 @@ export function ScorecardView({ stocks, selectedTicker, onUpdateStock, onNavigat
       {/* Title & Selector */}
       <div className="p-6 bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight text-gray-900 flex items-center gap-2">
-            <Sliders className="w-6 h-6 text-indigo-500" />
-            Stock Screening & Scorecard Setup
-          </h1>
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-2xl font-semibold tracking-tight text-gray-900 flex items-center gap-2">
+              <Sliders className="w-6 h-6 text-indigo-500" />
+              Stock Screening & Scorecard Setup
+            </h1>
+            <span className="px-1.5 py-0.5 text-4xs font-mono font-bold uppercase rounded bg-indigo-50 text-indigo-700 border border-indigo-100/50">
+              Freshness: 2026-05-24
+            </span>
+          </div>
           <p className="text-gray-500 text-sm">
             Evaluate leadership, profitability, growth levers, and asymmetric mathematical ratios to establish position sizing rules.
           </p>
@@ -201,8 +206,11 @@ export function ScorecardView({ stocks, selectedTicker, onUpdateStock, onNavigat
             
             <div className="flex justify-between items-start">
               <div>
-                <span className="text-3xs font-mono font-bold uppercase text-gray-400">COVERED TICKER</span>
-                <h2 className="text-2xl font-bold font-display text-gray-900 flex items-baseline gap-1.5 mt-0.5">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-3xs font-mono font-bold uppercase text-gray-400">COVERED TICKER</span>
+                  <span className="text-[7.5px] font-mono uppercase bg-emerald-50 text-emerald-700 px-1 rounded font-bold border border-emerald-100/50 leading-none">As of 05-24</span>
+                </div>
+                <h2 className="text-2xl font-bold font-display text-gray-900 flex items-baseline gap-1.5 mt-1">
                   {activeStock.ticker} 
                   <span className="text-2xs font-normal text-gray-400 capitalize">({activeStock.theme})</span>
                 </h2>

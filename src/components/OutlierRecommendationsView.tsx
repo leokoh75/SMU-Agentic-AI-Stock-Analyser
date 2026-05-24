@@ -262,17 +262,20 @@ export function OutlierRecommendationsView({ stocks }: OutlierRecommendationsVie
                         </span>
                       </div>
 
-                      {/* Giant Present Price Circle */}
-                      <div className="flex justify-between items-center bg-slate-50 p-4 rounded-xl border border-slate-100/60 mb-4">
-                        <div className="space-y-0.5">
-                          <span className="text-4xs text-gray-400 uppercase font-bold tracking-wider block">Today's Price</span>
-                          <span className="text-lg font-black text-slate-800 font-mono tracking-tight">${stock.currentPrice}</span>
-                        </div>
-                        <div className="text-right space-y-0.5">
-                          <span className="text-4xs text-gray-400 uppercase font-bold tracking-wider block">Normal Average</span>
-                          <span className="text-xs font-bold text-slate-600 font-mono">${stock.averagePrice}</span>
-                        </div>
-                      </div>
+                       {/* Giant Present Price Circle */}
+                       <div className="flex justify-between items-center bg-slate-50 p-4 rounded-xl border border-slate-100/60 mb-4">
+                         <div className="space-y-0.5">
+                           <div className="flex items-center gap-1.5">
+                             <span className="text-4xs text-gray-400 uppercase font-bold tracking-wider block">Today's Price</span>
+                             <span className="text-[7.5px] font-mono uppercase bg-emerald-50 text-emerald-700 px-1 rounded font-bold border border-emerald-100 leading-none">As of 05-24</span>
+                           </div>
+                           <span className="text-lg font-black text-slate-800 font-mono tracking-tight">${stock.currentPrice}</span>
+                         </div>
+                         <div className="text-right space-y-0.5">
+                           <span className="text-4xs text-gray-400 uppercase font-bold tracking-wider block">Normal Average</span>
+                           <span className="text-xs font-bold text-slate-600 font-mono">${stock.averagePrice}</span>
+                         </div>
+                       </div>
 
                       {/* Interactive Beginner Guideline Playbook Column */}
                       <div className="space-y-3">

@@ -21,17 +21,28 @@ export function generatePriceHistoryForTicker(ticker: string, basePrice: number)
   // Specific multipliers for each stock to reflect real-world trends from 2020 to 2026.
   const trends: Record<string, number[]> = {
     NVDA: [0.08, 0.15, 0.22, 0.32, 0.25, 0.14, 0.28, 0.45, 0.65, 0.85, 1.00, 0.95, 1.10, 1.15],
-    TSM:  [0.40, 0.65, 0.90, 0.95, 0.85, 0.55, 0.62, 0.75, 0.88, 1.10, 0.90, 1.05, 1.18, 1.25],
+    MSFT: [0.42, 0.55, 0.62, 0.78, 0.82, 0.68, 0.74, 0.85, 0.95, 1.08, 1.02, 1.12, 1.18, 1.22],
+    GOOGL:[0.44, 0.58, 0.65, 0.82, 0.85, 0.64, 0.60, 0.75, 0.88, 1.02, 0.96, 1.08, 1.16, 1.20],
     AMD:  [0.35, 0.55, 0.68, 0.85, 0.72, 0.48, 0.54, 0.78, 0.92, 1.05, 0.84, 0.94, 1.12, 1.15],
     AVGO: [0.22, 0.26, 0.35, 0.42, 0.45, 0.38, 0.48, 0.62, 0.85, 1.10, 0.98, 1.15, 1.22, 1.28],
-    MSFT: [0.42, 0.55, 0.62, 0.78, 0.82, 0.68, 0.74, 0.85, 0.95, 1.08, 1.02, 1.12, 1.18, 1.22],
-    AMZN: [0.55, 0.85, 0.92, 0.98, 0.85, 0.62, 0.58, 0.72, 0.84, 0.95, 0.90, 1.05, 1.12, 1.16],
-    GOOGL:[0.44, 0.58, 0.65, 0.82, 0.85, 0.64, 0.60, 0.75, 0.88, 1.02, 0.96, 1.08, 1.16, 1.20],
-    EQIX: [0.72, 0.82, 0.85, 0.92, 0.88, 0.78, 0.82, 0.88, 0.94, 1.05, 0.98, 1.05, 1.12, 1.15],
-    VST:  [0.18, 0.22, 0.20, 0.24, 0.22, 0.26, 0.28, 0.32, 0.45, 0.65, 0.85, 1.05, 1.15, 1.20],
+    
+    HON:  [0.55, 0.68, 0.75, 0.80, 0.85, 0.78, 0.82, 0.86, 0.92, 0.98, 0.90, 0.95, 1.02, 1.05],
+    IBM:  [0.45, 0.52, 0.58, 0.64, 0.72, 0.68, 0.75, 0.84, 0.92, 1.02, 0.96, 1.04, 1.12, 1.16],
+    INTC: [0.85, 0.94, 0.88, 0.75, 0.62, 0.55, 0.48, 0.52, 0.60, 0.68, 0.58, 0.62, 0.68, 0.72],
     IONQ: [0.35, 0.42, 1.00, 0.85, 0.40, 0.22, 0.38, 0.60, 0.55, 0.42, 0.52, 0.75, 0.82, 0.88],
-    GS:   [0.60, 0.68, 0.75, 0.86, 0.88, 0.72, 0.68, 0.78, 0.85, 0.96, 0.92, 1.02, 1.10, 1.14],
-    ASML: [0.30, 0.50, 0.72, 0.80, 0.76, 0.54, 0.60, 0.74, 0.86, 1.04, 0.88, 1.00, 1.14, 1.20]
+    RGTI: [0.45, 0.52, 1.20, 0.95, 0.35, 0.18, 0.32, 0.55, 0.48, 0.35, 0.42, 0.65, 0.78, 0.82],
+
+    EQIX: [0.72, 0.82, 0.85, 0.92, 0.88, 0.78, 0.82, 0.88, 0.94, 1.05, 0.98, 1.05, 1.12, 1.15],
+    ANET: [0.24, 0.32, 0.42, 0.55, 0.62, 0.58, 0.68, 0.75, 0.88, 1.02, 0.94, 1.05, 1.15, 1.22],
+    DLR:  [0.65, 0.72, 0.78, 0.85, 0.80, 0.72, 0.78, 0.82, 0.88, 0.96, 0.90, 0.96, 1.04, 1.08],
+    ORCL: [0.45, 0.55, 0.62, 0.68, 0.74, 0.70, 0.78, 0.85, 0.92, 1.04, 0.98, 1.06, 1.14, 1.18],
+    VRT:  [0.15, 0.22, 0.28, 0.35, 0.42, 0.38, 0.48, 0.58, 0.72, 0.95, 0.88, 1.02, 1.14, 1.22],
+
+    CEG:  [0.32, 0.38, 0.42, 0.48, 0.55, 0.52, 0.58, 0.68, 0.82, 1.02, 0.95, 1.08, 1.15, 1.20],
+    GEV:  [0.35, 0.42, 0.48, 0.54, 0.60, 0.58, 0.64, 0.72, 0.84, 1.02, 0.94, 1.06, 1.14, 1.18],
+    VST:  [0.18, 0.22, 0.20, 0.24, 0.22, 0.26, 0.28, 0.32, 0.45, 0.65, 0.85, 1.05, 1.15, 1.20],
+    NEE:  [0.75, 0.82, 0.88, 0.96, 0.92, 0.84, 0.80, 0.86, 0.90, 0.98, 0.92, 0.96, 1.02, 1.05],
+    OKLO: [0.30, 0.35, 0.42, 0.55, 0.48, 0.32, 0.40, 0.58, 0.65, 0.85, 0.72, 0.92, 1.12, 1.20]
   };
 
   const selectedTrend = trends[ticker] || [0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1.0, 1.05];
@@ -46,6 +57,7 @@ export function generatePriceHistoryForTicker(ticker: string, basePrice: number)
 }
 
 export const INITIAL_STOCKS: Stock[] = [
+  // ==================== CATEGORY: AI ====================
   {
     ticker: "NVDA",
     companyName: "NVIDIA Corporation",
@@ -61,9 +73,9 @@ export const INITIAL_STOCKS: Stock[] = [
       revenueGrowth: 5,
       profitability: 5,
       balanceSheet: 5,
-      valuationRisk: 2, // High risk = low score
+      valuationRisk: 2,
       catalystStrength: 5,
-      downsideRisk: 3, // Modest safety
+      downsideRisk: 3,
       asymmetricPotential: 4
     },
     asymmetry: {
@@ -73,7 +85,7 @@ export const INITIAL_STOCKS: Stock[] = [
       catalyst: 5,
       risk: 3
     },
-    rationale: "NVDA holds a virtual monopoly in datacenter AI training hardware. While extremely popular, its ecosystem lock-in (CUDA) renders it the ultimate computing anchor for this transition cycle.",
+    rationale: "NVDA holds a virtual monopoly in datacenter AI training hardware. Its CUDA lock-in renders it the ultimate compute anchor.",
     stats: {
       currentPrice: 920.00,
       high52w: 974.00,
@@ -92,148 +104,8 @@ export const INITIAL_STOCKS: Stock[] = [
       targetPrice: 1100.00,
       stopLoss: 750.00,
       buyReason: "Standard heavy hardware compute lock-in. Key anchor.",
-      buyExpectedCatalyst: "Next earnings print displaying continued Blackwell chip pre-orders.",
+      buyExpectedCatalyst: "Blackwell deliveries and hyperscaler GPU order additions.",
       decidedAt: "2026-05-15"
-    }
-  },
-  {
-    ticker: "AMD",
-    companyName: "Advanced Micro Devices",
-    sector: "Semiconductors",
-    region: "US",
-    marketCap: 280,
-    theme: "Chips",
-    reasonForInclusion: "Leading challenger in x86 CPUs and high-end AI accelerator chip silicon, launching MI300/MI325 series.",
-    anchorClassification: "asymmetric_opportunity",
-    scores: {
-      marketLeadership: 3,
-      growthExposure: 5,
-      revenueGrowth: 4,
-      profitability: 3,
-      balanceSheet: 4,
-      valuationRisk: 3,
-      catalystStrength: 4,
-      downsideRisk: 4,
-      asymmetricPotential: 5
-    },
-    asymmetry: {
-      upside: 5,
-      downside: 2,
-      conviction: 4,
-      catalyst: 4,
-      risk: 2
-    },
-    rationale: "AMD represents a secondary alternative to NVDA. Hyperscalers represent a captive buyer base eager to see a viable competitor. MI300 acceleration serves as a massive valuation lever.",
-    stats: {
-      currentPrice: 164.50,
-      high52w: 227.30,
-      low52w: 104.10,
-      movingAverage50: 168.10,
-      revenueGrowthRate: 18,
-      earningsTrend: "Improving, GAAP profits expanding on datacenter chip ramp",
-      valuationPE: "45x Forward P/E",
-      debtLevel: "Low",
-      leverageRatio: "Debt/Equity 0.08"
-    },
-    decisionState: "WATCHLIST",
-    nextReviewDate: "2026-06-15"
-  },
-  {
-    ticker: "AVGO",
-    companyName: "Broadcom Inc.",
-    sector: "Semiconductors",
-    region: "US",
-    marketCap: 680,
-    theme: "Chips",
-    reasonForInclusion: "Supreme leader in custom silicon (ASICs) for Google TPUs and advanced networking switch hardware.",
-    anchorClassification: "core_anchor",
-    scores: {
-      marketLeadership: 5,
-      growthExposure: 4,
-      revenueGrowth: 3,
-      profitability: 5,
-      balanceSheet: 3,
-      valuationRisk: 4,
-      catalystStrength: 4,
-      downsideRisk: 4,
-      asymmetricPotential: 4
-    },
-    asymmetry: {
-      upside: 4,
-      downside: 2,
-      conviction: 5,
-      catalyst: 4,
-      risk: 2
-    },
-    rationale: "Broadcom captures high premium software revenues from VMWare alongside customized ASIC chips designed for major cloud co-development clients (Google, Meta). Great cash flow profiles.",
-    stats: {
-      currentPrice: 142.50,
-      high52w: 151.20,
-      low52w: 78.40,
-      movingAverage50: 138.90,
-      revenueGrowthRate: 34,
-      earningsTrend: "Robust free cash flow matching a 45%+ operating margin",
-      valuationPE: "28x Forward P/E",
-      debtLevel: "Medium",
-      leverageRatio: "Debt/Equity 1.15"
-    },
-    decisionState: "HOLD",
-    nextReviewDate: "2026-07-20",
-    decisionData: {
-      holdReason: "Strong fundamental ASIC revenue but valuation fully pricing custom TPU/VMWare synergies in the short term.",
-      holdKeyRisk: "Slowing cloud CAPEX budgets or client insourcing of custom ASIC design.",
-      holdTrigger: "Evaluate potential add size if stock consolidates 10-15% lower.",
-      decidedAt: "2026-05-10"
-    }
-  },
-  {
-    ticker: "TSM",
-    companyName: "Taiwan Semiconductor Manufacturing Co.",
-    sector: "Semiconductors",
-    region: "Asia",
-    marketCap: 780,
-    theme: "Infrastructure",
-    reasonForInclusion: "Constructs over 90% of globally deployed high-end processor silicon.",
-    anchorClassification: "core_anchor",
-    scores: {
-      marketLeadership: 5,
-      growthExposure: 5,
-      revenueGrowth: 4,
-      profitability: 5,
-      balanceSheet: 4,
-      valuationRisk: 4,
-      catalystStrength: 4,
-      downsideRisk: 3,
-      asymmetricPotential: 4
-    },
-    asymmetry: {
-      upside: 4,
-      downside: 2,
-      conviction: 5,
-      catalyst: 4,
-      risk: 3
-    },
-    rationale: "Unrivaled fabrication monopolist. Safe and cheap fundamentally ($23x forward earnings), though constrained by geographic tension on the Taiwan strait. Irreplaceable link in compute hardware.",
-    stats: {
-      currentPrice: 154.00,
-      high52w: 162.00,
-      low52w: 92.00,
-      movingAverage50: 145.40,
-      revenueGrowthRate: 26,
-      earningsTrend: "Highly profitable, rising gross margins to 53%",
-      valuationPE: "23x Forward P/E",
-      debtLevel: "Medium",
-      leverageRatio: "Debt/Equity 0.38"
-    },
-    decisionState: "BUY",
-    nextReviewDate: "2026-06-30",
-    decisionData: {
-      positionSizePercent: 6,
-      targetPrice: 185.00,
-      stopLoss: 125.00,
-      buyReason: "Monopoly foundry. Essential component. Lower multiples balance the regional risks.",
-      buyExpectedCatalyst: "US CHIPS Act subsidies payout approvals and 2nm production line schedule releases.",
-      decidedAt: "2026-05-18"
     }
   },
   {
@@ -242,8 +114,8 @@ export const INITIAL_STOCKS: Stock[] = [
     sector: "Software",
     region: "US",
     marketCap: 3100,
-    theme: "Cloud",
-    reasonForInclusion: "Vanguard of software AI deployment through OpenAI backing, Azure cloud systems, and Copilot integrations.",
+    theme: "AI",
+    reasonForInclusion: "Vanguard of software AI deployment through OpenAI backing, Azure cloud, and Copilot integrations.",
     anchorClassification: "core_anchor",
     scores: {
       marketLeadership: 5,
@@ -253,8 +125,8 @@ export const INITIAL_STOCKS: Stock[] = [
       balanceSheet: 5,
       valuationRisk: 3,
       catalystStrength: 4,
-      downsideRisk: 5, // High safety = high score
-      asymmetricPotential: 3 // Core compounder, slightly less spec upside
+      downsideRisk: 5,
+      asymmetricPotential: 3
     },
     asymmetry: {
       upside: 3,
@@ -263,11 +135,11 @@ export const INITIAL_STOCKS: Stock[] = [
       catalyst: 4,
       risk: 1
     },
-    rationale: "MSFT translates raw AI compute into corporate SaaS licensing expansion at scale. Backed by AAA balance sheet and massive Azure cloud infrastructure.",
+    rationale: "MSFT translates raw AI compute into corporate SaaS licensing expansion at scale, backed by enterprise-grade models.",
     stats: {
       currentPrice: 422.00,
       high52w: 430.80,
-      low52w: 315.10,
+      low52w: 315.15,
       movingAverage50: 412.50,
       revenueGrowthRate: 17,
       earningsTrend: "Steadily rising cash flows, 20% y/y net margins",
@@ -281,57 +153,9 @@ export const INITIAL_STOCKS: Stock[] = [
       positionSizePercent: 10,
       targetPrice: 480.00,
       stopLoss: 380.00,
-      buyReason: "Extremely stable enterprise AI translation vector and high margin recurring database subscription fees.",
-      buyExpectedCatalyst: "Quarterly Azure revenue growth exceeding 30% indicating massive corporate cloud ingestion.",
+      buyReason: "Stable enterprise AI monetization and robust cloud scaling.",
+      buyExpectedCatalyst: "Azure SaaS expansion exceeds street forecasts.",
       decidedAt: "2026-05-12"
-    }
-  },
-  {
-    ticker: "AMZN",
-    companyName: "Amazon.com, Inc.",
-    sector: "Cloud / Infrastructure",
-    region: "US",
-    marketCap: 1900,
-    theme: "Cloud",
-    reasonForInclusion: "AWS operates the leading public cloud hosting data centers globally with heavy customized silicon investments.",
-    anchorClassification: "core_anchor",
-    scores: {
-      marketLeadership: 5,
-      growthExposure: 4,
-      revenueGrowth: 3,
-      profitability: 4,
-      balanceSheet: 4,
-      valuationRisk: 4,
-      catalystStrength: 3,
-      downsideRisk: 4,
-      asymmetricPotential: 3
-    },
-    asymmetry: {
-      upside: 3,
-      downside: 2,
-      conviction: 4,
-      catalyst: 3,
-      risk: 2
-    },
-    rationale: "AWS commands premier infrastructure share. Large free cash flow optimization from e-commerce logistics can backstop massive computing data centre builds globally.",
-    stats: {
-      currentPrice: 182.00,
-      high52w: 191.70,
-      low52w: 118.20,
-      movingAverage50: 179.20,
-      revenueGrowthRate: 14,
-      earningsTrend: "Growing operating margin over 11% led by AWS efficiency",
-      valuationPE: "42x Trailing P/E",
-      debtLevel: "Medium",
-      leverageRatio: "Debt/Equity 0.35"
-    },
-    decisionState: "HOLD",
-    nextReviewDate: "2026-08-01",
-    decisionData: {
-      holdReason: "Retail margins stabilized, but AWS margins priced in. Looking for better cloud SaaS breakthrough.",
-      holdKeyRisk: "Price wars on bare metal VMs among Azure, AWS, and GCP.",
-      holdTrigger: "Buy more if AWS growth sweeps past 21% or nuclear power deals finalized.",
-      decidedAt: "2026-05-11"
     }
   },
   {
@@ -361,7 +185,7 @@ export const INITIAL_STOCKS: Stock[] = [
       catalyst: 4,
       risk: 1
     },
-    rationale: "Very stable valuation (22x forward) with enormous proprietary data vectors. Vertically integrated from TPUs up to YouTube, android search and deep academic research (DeepMind).",
+    rationale: "Alphabet's robust Google Cloud TPU ecosystem and foundational DeepMind research allow strong vertical integration.",
     stats: {
       currentPrice: 174.50,
       high52w: 178.60,
@@ -376,6 +200,331 @@ export const INITIAL_STOCKS: Stock[] = [
     decisionState: "WATCHLIST",
     nextReviewDate: "2026-06-25"
   },
+  {
+    ticker: "AMD",
+    companyName: "Advanced Micro Devices",
+    sector: "Semiconductors",
+    region: "US",
+    marketCap: 280,
+    theme: "AI",
+    reasonForInclusion: "Leading challenger in x86 CPUs and high-end AI accelerator chip silicon, launching MI300/MI325 series.",
+    anchorClassification: "asymmetric_opportunity",
+    scores: {
+      marketLeadership: 3,
+      growthExposure: 5,
+      revenueGrowth: 4,
+      profitability: 3,
+      balanceSheet: 4,
+      valuationRisk: 3,
+      catalystStrength: 4,
+      downsideRisk: 4,
+      asymmetricPotential: 5
+    },
+    asymmetry: {
+      upside: 5,
+      downside: 2,
+      conviction: 4,
+      catalyst: 4,
+      risk: 2
+    },
+    rationale: "AMD represents a secondary alternative to NVDA. Hyperscalers represent a captive buyer base eager to see a viable competitor.",
+    stats: {
+      currentPrice: 164.50,
+      high52w: 227.30,
+      low52w: 104.10,
+      movingAverage50: 168.10,
+      revenueGrowthRate: 18,
+      earningsTrend: "Improving, GAAP profits expanding on datacenter chip ramp",
+      valuationPE: "45x Forward P/E",
+      debtLevel: "Low",
+      leverageRatio: "Debt/Equity 0.08"
+    },
+    decisionState: "WATCHLIST",
+    nextReviewDate: "2026-06-15"
+  },
+  {
+    ticker: "AVGO",
+    companyName: "Broadcom Inc.",
+    sector: "Semiconductors",
+    region: "US",
+    marketCap: 680,
+    theme: "AI",
+    reasonForInclusion: "Supreme leader in custom silicon (ASICs) for Google TPUs and advanced networking switch hardware.",
+    anchorClassification: "core_anchor",
+    scores: {
+      marketLeadership: 5,
+      growthExposure: 4,
+      revenueGrowth: 3,
+      profitability: 5,
+      balanceSheet: 3,
+      valuationRisk: 4,
+      catalystStrength: 4,
+      downsideRisk: 4,
+      asymmetricPotential: 4
+    },
+    asymmetry: {
+      upside: 4,
+      downside: 2,
+      conviction: 5,
+      catalyst: 4,
+      risk: 2
+    },
+    rationale: "Broadcom captures high premium software revenues alongside customized ASIC chips designed for major cloud co-development clients.",
+    stats: {
+      currentPrice: 142.50,
+      high52w: 151.20,
+      low52w: 78.40,
+      movingAverage50: 138.90,
+      revenueGrowthRate: 34,
+      earningsTrend: "Robust free cash flow matching a 45%+ operating margin",
+      valuationPE: "28x Forward P/E",
+      debtLevel: "Medium",
+      leverageRatio: "Debt/Equity 1.15"
+    },
+    decisionState: "HOLD",
+    nextReviewDate: "2026-07-20",
+    decisionData: {
+      holdReason: "Strong fundamental ASIC revenue but valuation fully pricing custom TPU/VMWare synergies in the short term.",
+      holdKeyRisk: "Slowing cloud CAPEX budgets or client insourcing of custom ASIC design.",
+      holdTrigger: "Evaluate potential add size if stock consolidates 10-15% lower.",
+      decidedAt: "2026-05-10"
+    }
+  },
+
+  // ==================== CATEGORY: QUANTUM ====================
+  {
+    ticker: "HON",
+    companyName: "Honeywell International Inc.",
+    sector: "Industrial Technologies",
+    region: "US",
+    marketCap: 140,
+    theme: "Quantum",
+    reasonForInclusion: "Owns Quantinuum, the leading trapped-ion quantum developer with pioneer logical-qubit execution.",
+    anchorClassification: "core_anchor",
+    scores: {
+      marketLeadership: 5,
+      growthExposure: 4,
+      revenueGrowth: 2,
+      profitability: 5,
+      balanceSheet: 4,
+      valuationRisk: 4,
+      catalystStrength: 4,
+      downsideRisk: 5,
+      asymmetricPotential: 3
+    },
+    asymmetry: {
+      upside: 4,
+      downside: 1,
+      conviction: 5,
+      catalyst: 4,
+      risk: 1
+    },
+    rationale: "HON provides a highly defensive way to access quantum upside, backed by a massive cash-generating aerospace and building controls parent firm.",
+    stats: {
+      currentPrice: 215.00,
+      high52w: 228.00,
+      low52w: 175.50,
+      movingAverage50: 210.20,
+      revenueGrowthRate: 6,
+      earningsTrend: "Highly stable enterprise revenues with rising margin structures",
+      valuationPE: "22x Forward P/E",
+      debtLevel: "Medium",
+      leverageRatio: "Debt/Equity 0.85"
+    },
+    decisionState: "HOLD",
+    nextReviewDate: "2026-08-10",
+    decisionData: {
+      holdReason: "Quantum wing is incredibly promising, but parent industrial cycles represent the main driver today.",
+      holdKeyRisk: "Commercial quantum scaling takes longer than estimated.",
+      holdTrigger: "Add on general industrial market drawdowns.",
+      decidedAt: "2026-05-18"
+    }
+  },
+  {
+    ticker: "IBM",
+    companyName: "International Business Machines",
+    sector: "Software & Technology",
+    region: "US",
+    marketCap: 170,
+    theme: "Quantum",
+    reasonForInclusion: "Pioneering leader in superconductive qubit architectures, offering standard cloud access to actual multi-qubit utilities.",
+    anchorClassification: "core_anchor",
+    scores: {
+      marketLeadership: 5,
+      growthExposure: 4,
+      revenueGrowth: 3,
+      profitability: 4,
+      balanceSheet: 4,
+      valuationRisk: 4,
+      catalystStrength: 4,
+      downsideRisk: 4,
+      asymmetricPotential: 3
+    },
+    asymmetry: {
+      upside: 3,
+      downside: 1,
+      conviction: 4,
+      catalyst: 4,
+      risk: 2
+    },
+    rationale: "IBM is the world's most deployed quantum compiler company. Their hybrid cloud software base backstops extensive research and development channels.",
+    stats: {
+      currentPrice: 188.00,
+      high52w: 199.10,
+      low52w: 130.20,
+      movingAverage50: 182.40,
+      revenueGrowthRate: 8,
+      earningsTrend: "Strong software expansion and cash conversion performance",
+      valuationPE: "18x Forward P/E",
+      debtLevel: "Medium",
+      leverageRatio: "Debt/Equity 1.20"
+    },
+    decisionState: "BUY",
+    nextReviewDate: "2026-07-25",
+    decisionData: {
+      positionSizePercent: 5,
+      targetPrice: 220.00,
+      stopLoss: 165.00,
+      buyReason: "Very reasonable valuation, strong enterprise hybrid cloud, leading quantum hardware network.",
+      buyExpectedCatalyst: "System Condor scaling announcement displaying logical quantum superiority.",
+      decidedAt: "2026-05-14"
+    }
+  },
+  {
+    ticker: "INTC",
+    companyName: "Intel Corporation",
+    sector: "Semiconductors",
+    region: "US",
+    marketCap: 135,
+    theme: "Quantum",
+    reasonForInclusion: "Developing silicon spin qubit chips ('Tunnel Falls') leveraging standard advanced CMOS foundry fabrication lines.",
+    anchorClassification: "asymmetric_opportunity",
+    scores: {
+      marketLeadership: 3,
+      growthExposure: 4,
+      revenueGrowth: 2,
+      profitability: 2,
+      balanceSheet: 3,
+      valuationRisk: 4,
+      catalystStrength: 3,
+      downsideRisk: 3,
+      asymmetricPotential: 4
+    },
+    asymmetry: {
+      upside: 4,
+      downside: 3,
+      conviction: 3,
+      catalyst: 3,
+      risk: 3
+    },
+    rationale: "Intel's silicon spin qubit leverages existing silicon fab pipelines. Although standard revenue is stagnant, quantum scaling acts as a long-term asymmetric options lever.",
+    stats: {
+      currentPrice: 32.00,
+      high52w: 50.40,
+      low52w: 26.20,
+      movingAverage50: 34.50,
+      revenueGrowthRate: -3,
+      earningsTrend: "Losing ground on standard CPU; heavy foundry spending",
+      valuationPE: "28x Forward P/E",
+      debtLevel: "High",
+      leverageRatio: "Debt/Equity 0.45"
+    },
+    decisionState: "REVIEW",
+    nextReviewDate: "2026-06-12"
+  },
+  {
+    ticker: "IONQ",
+    companyName: "IonQ, Inc.",
+    sector: "Quantum Computing",
+    region: "US",
+    marketCap: 2.3,
+    theme: "Quantum",
+    reasonForInclusion: "Pioneering pure-play quantum hardware vendor delivering trapped-ion computer processing units via cloud platforms.",
+    anchorClassification: "speculative_opportunity",
+    scores: {
+      marketLeadership: 3,
+      growthExposure: 5,
+      revenueGrowth: 5,
+      profitability: 1,
+      balanceSheet: 4,
+      valuationRisk: 2,
+      catalystStrength: 4,
+      downsideRisk: 4,
+      asymmetricPotential: 5
+    },
+    asymmetry: {
+      upside: 5,
+      downside: 4,
+      conviction: 3,
+      catalyst: 4,
+      risk: 4
+    },
+    rationale: "High risk speculative pure play. Trapped-ion modular QPUs can scale to logic qubit correction relatively quickly.",
+    stats: {
+      currentPrice: 11.20,
+      high52w: 20.10,
+      low52w: 6.80,
+      movingAverage50: 10.80,
+      revenueGrowthRate: 88,
+      earningsTrend: "GAAP loss of ~$150M oper. loss; supported by $400M cash",
+      valuationPE: "P/S 43x",
+      debtLevel: "Low",
+      leverageRatio: "Debt/Equity 0.05"
+    },
+    decisionState: "SELL",
+    nextReviewDate: "2026-05-30",
+    decisionData: {
+      sellReason: "Reached target tech resistance. Partially rebalancing to energy (VST).",
+      realizedGainPercent: 45,
+      sellLesson: "Trim highly volatile speculative positions when momentum peaks.",
+      keepOnWatchlist: true,
+      decidedAt: "2026-05-19"
+    }
+  },
+  {
+    ticker: "RGTI",
+    companyName: "Rigetti Computing Inc.",
+    sector: "Quantum Computing",
+    region: "US",
+    marketCap: 0.25,
+    theme: "Quantum",
+    reasonForInclusion: "Pure-play fabricator of superconductive multi-qubit chips, launching Ankaa-9Q processing units.",
+    anchorClassification: "speculative_opportunity",
+    scores: {
+      marketLeadership: 2,
+      growthExposure: 5,
+      revenueGrowth: 3,
+      profitability: 1,
+      balanceSheet: 3,
+      valuationRisk: 1,
+      catalystStrength: 4,
+      downsideRisk: 2,
+      asymmetricPotential: 5
+    },
+    asymmetry: {
+      upside: 5,
+      downside: 5,
+      conviction: 2,
+      catalyst: 4,
+      risk: 5
+    },
+    rationale: "Highly speculative microcap computing stock. Rigetti occupies a pure-play niche but faces continuous dilution risk.",
+    stats: {
+      currentPrice: 1.45,
+      high52w: 3.20,
+      low52w: 0.75,
+      movingAverage50: 1.30,
+      revenueGrowthRate: 12,
+      earningsTrend: "Substantial cash burn, operating losses narrowing slightly",
+      valuationPE: "N/A",
+      debtLevel: "Low",
+      leverageRatio: "Debt/Equity 0.08"
+    },
+    decisionState: "WATCHLIST",
+    nextReviewDate: "2026-06-20"
+  },
+
+  // ==================== CATEGORY: DATA CENTRES ====================
   {
     ticker: "EQIX",
     companyName: "Equinix, Inc.",
@@ -403,7 +552,7 @@ export const INITIAL_STOCKS: Stock[] = [
       catalyst: 3,
       risk: 2
     },
-    rationale: "A retail REIT yielding dividends. Equinix provides the critical cross-connect networking nodes. Less explosive, but steady defensive infrastructure play with contract escalators.",
+    rationale: "Equinix provides critical networking nodes. Steady defensive infrastructure play with reliable rental escalators.",
     stats: {
       currentPrice: 785.00,
       high52w: 912.00,
@@ -419,12 +568,312 @@ export const INITIAL_STOCKS: Stock[] = [
     nextReviewDate: "2026-05-28"
   },
   {
+    ticker: "ANET",
+    companyName: "Arista Networks, Inc.",
+    sector: "Networking Software",
+    region: "US",
+    marketCap: 92,
+    theme: "Data Centres",
+    reasonForInclusion: "Leading designer of high-performance switches supporting rapid AI datacenter cluster interconnects.",
+    anchorClassification: "core_anchor",
+    scores: {
+      marketLeadership: 5,
+      growthExposure: 5,
+      revenueGrowth: 4,
+      profitability: 5,
+      balanceSheet: 5,
+      valuationRisk: 3,
+      catalystStrength: 4,
+      downsideRisk: 4,
+      asymmetricPotential: 4
+    },
+    asymmetry: {
+      upside: 4,
+      downside: 2,
+      conviction: 5,
+      catalyst: 4,
+      risk: 2
+    },
+    rationale: "Essential hardware builder for multi-node AI training systems. High margin EOS software layer creates strong operational moat.",
+    stats: {
+      currentPrice: 290.00,
+      high52w: 310.50,
+      low52w: 162.00,
+      movingAverage50: 275.40,
+      revenueGrowthRate: 28,
+      earningsTrend: "Stellar earnings velocity guided by cloud titian orders",
+      valuationPE: "35x Forward P/E",
+      debtLevel: "Low",
+      leverageRatio: "Debt/Equity 0.02"
+    },
+    decisionState: "BUY",
+    nextReviewDate: "2026-07-15",
+    decisionData: {
+      positionSizePercent: 6,
+      targetPrice: 340.00,
+      stopLoss: 250.00,
+      buyReason: "Networking is the bottleneck of AI clusters; Infiniband challenger.",
+      buyExpectedCatalyst: "Ultra Ethernet Consortium standard adoption spike.",
+      decidedAt: "2026-05-16"
+    }
+  },
+  {
+    ticker: "DLR",
+    companyName: "Digital Realty Trust",
+    sector: "Data Centres",
+    region: "US",
+    marketCap: 45,
+    theme: "Data Centres",
+    reasonForInclusion: "Global wholesale datacenter REIT with significant power allocations in Virginia and Dallas hubs.",
+    anchorClassification: "core_anchor",
+    scores: {
+      marketLeadership: 4,
+      growthExposure: 4,
+      revenueGrowth: 2,
+      profitability: 4,
+      balanceSheet: 3,
+      valuationRisk: 3,
+      catalystStrength: 3,
+      downsideRisk: 4,
+      asymmetricPotential: 3
+    },
+    asymmetry: {
+      upside: 3,
+      downside: 2,
+      conviction: 4,
+      catalyst: 3,
+      risk: 2
+    },
+    rationale: "Wholesale space landlord. Provides immediate physical co-location spaces for hyperscalers experiencing massive capacity constraints.",
+    stats: {
+      currentPrice: 148.00,
+      high52w: 160.20,
+      low52w: 110.10,
+      movingAverage50: 144.10,
+      revenueGrowthRate: 9,
+      earningsTrend: "Securing higher lease escalators on high space demand",
+      valuationPE: "21x Price/AFFO",
+      debtLevel: "High",
+      leverageRatio: "Debt/Equity 1.55"
+    },
+    decisionState: "HOLD",
+    nextReviewDate: "2026-06-28",
+    decisionData: {
+      holdReason: "Strong fundamental occupancy rate, but limited by slow utility power connection arrivals.",
+      holdKeyRisk: "Regional electrical grid constraints blocking lease initiations.",
+      holdTrigger: "Buy more if local substation permits get approved sooner.",
+      decidedAt: "2026-05-15"
+    }
+  },
+  {
+    ticker: "ORCL",
+    companyName: "Oracle Corporation",
+    sector: "Enterprise Software",
+    region: "US",
+    marketCap: 330,
+    theme: "Data Centres",
+    reasonForInclusion: "Rapidly expanding OCI (Oracle Cloud Infrastructure) database clusters hosting state-of-the-art AI training lines.",
+    anchorClassification: "asymmetric_opportunity",
+    scores: {
+      marketLeadership: 4,
+      growthExposure: 4,
+      revenueGrowth: 3,
+      profitability: 4,
+      balanceSheet: 3,
+      valuationRisk: 4,
+      catalystStrength: 4,
+      downsideRisk: 4,
+      asymmetricPotential: 4
+    },
+    asymmetry: {
+      upside: 4,
+      downside: 2,
+      conviction: 4,
+      catalyst: 4,
+      risk: 2
+    },
+    rationale: "Moated databases moving aggressively into hyperscaler cloud hosting, utilizing customized GPU clusters to offer highly specialized sovereign clouds.",
+    stats: {
+      currentPrice: 122.00,
+      high52w: 132.80,
+      low52w: 98.50,
+      movingAverage50: 118.20,
+      revenueGrowthRate: 12,
+      earningsTrend: "OCI cloud revenues growing 45%+ y/y, offsetting legacy software flat lines",
+      valuationPE: "19x Forward P/E (Cheap Growth)",
+      debtLevel: "High",
+      leverageRatio: "Debt/Equity 1.90"
+    },
+    decisionState: "BUY",
+    nextReviewDate: "2026-07-10",
+    decisionData: {
+      positionSizePercent: 5,
+      targetPrice: 155.00,
+      stopLoss: 105.00,
+      buyReason: "Rapid database migrate velocity and key co-hosting deals with Microsoft/Google.",
+      buyExpectedCatalyst: "Massive sovereign cloud database contract signoffs across European zones.",
+      decidedAt: "2026-05-18"
+    }
+  },
+  {
+    ticker: "VRT",
+    companyName: "Vertiv Holdings Co",
+    sector: "Industrial Hardware",
+    region: "US",
+    marketCap: 35,
+    theme: "Data Centres",
+    reasonForInclusion: "Premier provider of global liquid cooling and thermal-management systems crucial for high-load chip density configurations.",
+    anchorClassification: "asymmetric_opportunity",
+    scores: {
+      marketLeadership: 5,
+      growthExposure: 5,
+      revenueGrowth: 4,
+      profitability: 4,
+      balanceSheet: 3,
+      valuationRisk: 2, // fully valued
+      catalystStrength: 5,
+      downsideRisk: 3,
+      asymmetricPotential: 5
+    },
+    asymmetry: {
+      upside: 5,
+      downside: 3,
+      conviction: 4,
+      catalyst: 5,
+      risk: 3
+    },
+    rationale: "Blackwell chip clusters generate massive thermal grids requiring direct-to-chip liquid cooling. Vertiv dominates wholesale thermal controls contracts.",
+    stats: {
+      currentPrice: 94.00,
+      high52w: 108.00,
+      low52w: 32.50,
+      movingAverage50: 89.10,
+      revenueGrowthRate: 35,
+      earningsTrend: "Substantial margin expanding on premium cooling systems pricing power",
+      valuationPE: "40x Forward P/E",
+      debtLevel: "Medium",
+      leverageRatio: "Debt/Equity 1.25"
+    },
+    decisionState: "BUY",
+    nextReviewDate: "2026-06-20",
+    decisionData: {
+      positionSizePercent: 4,
+      targetPrice: 120.00,
+      stopLoss: 78.00,
+      buyReason: "Thermal liquid cooling is moving from optional to absolute mandatory for >100kW racks.",
+      buyExpectedCatalyst: "Backlog backlog expansion announcements highlighting long-lead customer lock.",
+      decidedAt: "2026-05-17"
+    }
+  },
+
+  // ==================== CATEGORY: POWER ====================
+  {
+    ticker: "CEG",
+    companyName: "Constellation Energy",
+    sector: "Energy / Utilities",
+    region: "US",
+    marketCap: 68,
+    theme: "Power",
+    reasonForInclusion: "The largest US carbon-free company, containing massive nuclear generation capacity located near dense internet nodes.",
+    anchorClassification: "core_anchor",
+    scores: {
+      marketLeadership: 5,
+      growthExposure: 5,
+      revenueGrowth: 3,
+      profitability: 4,
+      balanceSheet: 3,
+      valuationRisk: 3,
+      catalystStrength: 5,
+      downsideRisk: 4,
+      asymmetricPotential: 4
+    },
+    asymmetry: {
+      upside: 4,
+      downside: 1,
+      conviction: 5,
+      catalyst: 5,
+      risk: 2
+    },
+    rationale: "Unrivaled nuclear fleet capacity. Ideally positioned to sign premium, physical behind-the-meter co-location clean power agreements with hyperscalers.",
+    stats: {
+      currentPrice: 212.00,
+      high52w: 232.00,
+      low52w: 110.00,
+      movingAverage50: 198.50,
+      revenueGrowthRate: 15,
+      earningsTrend: "Strong earnings expansions on carbon offsets and long-term utility margins",
+      valuationPE: "26x Forward P/E",
+      debtLevel: "High",
+      leverageRatio: "Debt/Equity 1.65"
+    },
+    decisionState: "BUY",
+    nextReviewDate: "2026-06-30",
+    decisionData: {
+      positionSizePercent: 5,
+      targetPrice: 260.00,
+      stopLoss: 180.00,
+      buyReason: "Premier zero-emissions baseload source. Absolute physical limitation play.",
+      buyExpectedCatalyst: "Signing 20-year corporate behind-the-meter contract with leading public cloud provider.",
+      decidedAt: "2026-05-19"
+    }
+  },
+  {
+    ticker: "GEV",
+    companyName: "GE Vernova Inc.",
+    sector: "Industrial Utilities",
+    region: "US",
+    marketCap: 44,
+    theme: "Power",
+    reasonForInclusion: "Recently spun-off leader in wind turbines, gas generators, and physical grid electrification networks backing heavy grid additions.",
+    anchorClassification: "core_anchor",
+    scores: {
+      marketLeadership: 5,
+      growthExposure: 4,
+      revenueGrowth: 3,
+      profitability: 3,
+      balanceSheet: 4,
+      valuationRisk: 4,
+      catalystStrength: 4,
+      downsideRisk: 4,
+      asymmetricPotential: 3
+    },
+    asymmetry: {
+      upside: 3,
+      downside: 1,
+      conviction: 4,
+      catalyst: 4,
+      risk: 2
+    },
+    rationale: "Moated designer of heavy physical machinery. If the electric grid upgrades to support 40GW additions, Vernova grid transformers are mandatory.",
+    stats: {
+      currentPrice: 162.00,
+      high52w: 178.50,
+      low52w: 120.40,
+      movingAverage50: 155.20,
+      revenueGrowthRate: 10,
+      earningsTrend: "Turnaround profitable margins on solid equipment backlogs",
+      valuationPE: "24x Forward P/E",
+      debtLevel: "Low",
+      leverageRatio: "Debt/Equity 0.18"
+    },
+    decisionState: "BUY",
+    nextReviewDate: "2026-07-20",
+    decisionData: {
+      positionSizePercent: 4,
+      targetPrice: 195.00,
+      stopLoss: 135.00,
+      buyReason: "Essential transmission line transformer monpoloy provider; power machinery cycles rising.",
+      buyExpectedCatalyst: "Sustained grid integration bottlenecks forcing massive utility upgrade mandates.",
+      decidedAt: "2026-05-19"
+    }
+  },
+  {
     ticker: "VST",
     companyName: "Vistra Corp.",
     sector: "Energy / Utilities",
     region: "US",
     marketCap: 38,
-    theme: "Energy",
+    theme: "Power",
     reasonForInclusion: "Independent power producer possessing substantial nuclear and gas assets located near key US internet hub facilities.",
     anchorClassification: "asymmetric_opportunity",
     scores: {
@@ -445,14 +894,14 @@ export const INITIAL_STOCKS: Stock[] = [
       catalyst: 5,
       risk: 2
     },
-    rationale: "Power is the single most defining physical constraint on datacenter deployment. Vistra's nuclear assets represent reliable clean baseload power valued highly by hyperscalers.",
+    rationale: "Power is the defining physical constraint. Vistra's nuclear assets represent reliable clean baseload power valued highly by hyperscalers.",
     stats: {
       currentPrice: 85.00,
       high52w: 92.50,
       low52w: 24.10,
       movingAverage50: 78.40,
       revenueGrowthRate: 16,
-      earningsTrend: "Margins expanding heavily on power purchasing agreement premium yields",
+      earningsTrend: "Margins expanding on power purchasing agreement premium yields",
       valuationPE: "20x Forward P/E",
       debtLevel: "High",
       leverageRatio: "Debt/Equity 1.95"
@@ -469,13 +918,61 @@ export const INITIAL_STOCKS: Stock[] = [
     }
   },
   {
-    ticker: "IONQ",
-    companyName: "IonQ, Inc.",
-    sector: "Quantum Computing",
+    ticker: "NEE",
+    companyName: "NextEra Energy, Inc.",
+    sector: "Energy / Utilities",
     region: "US",
-    marketCap: 2.3,
-    theme: "Quantum",
-    reasonForInclusion: "Pioneering pure-play quantum hardware vendor delivering trapped-ion computer processing units via cloud.",
+    marketCap: 150,
+    theme: "Power",
+    reasonForInclusion: "World's largest operator of solar, wind and battery storage networks, backed by a huge regulated utility business (FPL).",
+    anchorClassification: "core_anchor",
+    scores: {
+      marketLeadership: 5,
+      growthExposure: 4,
+      revenueGrowth: 2,
+      profitability: 4,
+      balanceSheet: 3,
+      valuationRisk: 4,
+      catalystStrength: 3,
+      downsideRisk: 5,
+      asymmetricPotential: 3
+    },
+    asymmetry: {
+      upside: 3,
+      downside: 1,
+      conviction: 5,
+      catalyst: 3,
+      risk: 2
+    },
+    rationale: "Safe, heavily moated hybrid utility. Solves immediate zero-carbon goals through solar/wind additions with localized battery storage.",
+    stats: {
+      currentPrice: 74.50,
+      high52w: 82.10,
+      low52w: 49.80,
+      movingAverage50: 71.30,
+      revenueGrowthRate: 7,
+      earningsTrend: "Extremely stable regulated asset base and expanding green contracts",
+      valuationPE: "16x Forward P/E (Value Yield)",
+      debtLevel: "High",
+      leverageRatio: "Debt/Equity 1.80"
+    },
+    decisionState: "HOLD",
+    nextReviewDate: "2026-08-01",
+    decisionData: {
+      holdReason: "Heavily defensive regulated cash flows but solar additions face localized transmission congestion delays.",
+      holdKeyRisk: "Prolonged high interest state lowering capital yields on lease infrastructure.",
+      holdTrigger: "Evaluate potential add sizing if stock consolidates 5-10% below average.",
+      decidedAt: "2026-05-16"
+    }
+  },
+  {
+    ticker: "OKLO",
+    companyName: "Oklo Inc.",
+    sector: "Advanced Nuclear",
+    region: "US",
+    marketCap: 1.5,
+    theme: "Power",
+    reasonForInclusion: "Pioneering developer of fast-fission micro-reactors designed to supply clean 15MWe baseload electricity direct to datacenters.",
     anchorClassification: "speculative_opportunity",
     scores: {
       marketLeadership: 3,
@@ -483,141 +980,36 @@ export const INITIAL_STOCKS: Stock[] = [
       revenueGrowth: 5,
       profitability: 1,
       balanceSheet: 4,
-      valuationRisk: 2,
-      catalystStrength: 4,
-      downsideRisk: 4,
+      valuationRisk: 1,
+      catalystStrength: 5,
+      downsideRisk: 3,
       asymmetricPotential: 5
     },
     asymmetry: {
       upside: 5,
       downside: 4,
-      conviction: 3,
-      catalyst: 4,
+      conviction: 2,
+      catalyst: 5,
       risk: 4
     },
-    rationale: "High risk, cash burn speculative pick. Excellent asymmetry: absolute zero or 50x upside. Trapped-ion modular QPUs can scale to logic qubit correction quickly, disrupting encryption, logistics, and modeling.",
+    rationale: "High risk, pre-commercialization atomic microcap. Oklo represents the ultimate physical call-option on modular microgrid energy deployment.",
     stats: {
-      currentPrice: 11.20,
-      high52w: 20.10,
-      low52w: 6.80,
-      movingAverage50: 10.80,
-      revenueGrowthRate: 88,
-      earningsTrend: "Loss making (~$150M oper. loss), supported by $400M solid cash cushion",
-      valuationPE: "P/S 43x",
+      currentPrice: 12.50,
+      high52w: 18.80,
+      low52w: 5.40,
+      movingAverage50: 11.20,
+      revenueGrowthRate: 0,
+      earningsTrend: "Pre-operational R&D state, backed by solid cash runway",
+      valuationPE: "N/A",
       debtLevel: "Low",
-      leverageRatio: "Debt/Equity 0.05"
+      leverageRatio: "Debt/Equity 0.02"
     },
-    decisionState: "SELL",
-    nextReviewDate: "2026-05-30",
-    decisionData: {
-      sellReason: "Reached target technical resistance point. Rebalancing into energy anchor (VST).",
-      realizedGainPercent: 45,
-      sellLesson: "Exit volatile pre-revenue stocks partially when hype peaks.",
-      keepOnWatchlist: true,
-      decidedAt: "2026-05-19"
-    }
-  },
-  {
-    ticker: "GS",
-    companyName: "Goldman Sachs Group",
-    sector: "Financial Services",
-    region: "US",
-    marketCap: 155,
-    theme: "Capital Markets",
-    reasonForInclusion: "Strong macro partner that finances and benefits from tech waves and capital recycling.",
-    anchorClassification: "core_anchor",
-    scores: {
-      marketLeadership: 4,
-      growthExposure: 3,
-      revenueGrowth: 3,
-      profitability: 4,
-      balanceSheet: 4,
-      valuationRisk: 4,
-      catalystStrength: 3,
-      downsideRisk: 4,
-      asymmetricPotential: 3
-    },
-    asymmetry: {
-      upside: 3,
-      downside: 2,
-      conviction: 4,
-      catalyst: 3,
-      risk: 2
-    },
-    rationale: "Goldman Sachs represents the premier financial sponsor of corporate tech expansion through advisory and capital underwriting, highly correlated with tech cycles in relative proportions.",
-    stats: {
-      currentPrice: 380.00,
-      high52w: 420.00,
-      low52w: 305.00,
-      movingAverage50: 368.50,
-      revenueGrowthRate: 15,
-      earningsTrend: "Sustained investment banking advisory fee growth",
-      valuationPE: "11x Forward P/E",
-      debtLevel: "High",
-      leverageRatio: "Debt/Equity 2.50"
-    },
-    decisionState: "HOLD",
-    nextReviewDate: "2026-07-15",
-    decisionData: {
-      holdReason: "Strong capital market activities, highly correlated with tech liquidity waves.",
-      holdKeyRisk: "Interest rate volatile, private credit competition risk.",
-      holdTrigger: "Buy more if capital transactions/IPO volume shows multi-quarter spike.",
-      decidedAt: "2026-05-18"
-    }
-  },
-  {
-    ticker: "ASML",
-    companyName: "ASML Holding N.V.",
-    sector: "Semiconductors",
-    region: "Europe",
-    marketCap: 360,
-    theme: "Chips",
-    reasonForInclusion: "Unrivaled monopoly supplier of Extreme Ultraviolet (EUV) photolithography machines to chip foundries.",
-    anchorClassification: "core_anchor",
-    scores: {
-      marketLeadership: 5,
-      growthExposure: 5,
-      revenueGrowth: 4,
-      profitability: 5,
-      balanceSheet: 4,
-      valuationRisk: 3,
-      catalystStrength: 4,
-      downsideRisk: 4,
-      asymmetricPotential: 4
-    },
-    asymmetry: {
-      upside: 4,
-      downside: 2,
-      conviction: 5,
-      catalyst: 4,
-      risk: 2
-    },
-    rationale: "ASML is the ultimate bottleneck in semiconductor manufacturing. Every modern GPU designed by NVIDIA and fabricated by TSMC requires ASML's lithography systems, making it the perfect tech hardware proxy.",
-    stats: {
-      currentPrice: 910.00,
-      high52w: 1020.00,
-      low52w: 610.00,
-      movingAverage50: 885.05,
-      revenueGrowthRate: 30,
-      earningsTrend: "Industry-leading 50%+ gross margin backed by multi-billion order backlog",
-      valuationPE: "38x Forward P/E",
-      debtLevel: "Low",
-      leverageRatio: "Debt/Equity 0.25"
-    },
-    decisionState: "BUY",
-    nextReviewDate: "2026-06-30",
-    decisionData: {
-      positionSizePercent: 5,
-      targetPrice: 1100.00,
-      stopLoss: 780.00,
-      buyReason: "Monopoly lithography node supplier, core hardware value chain component.",
-      buyExpectedCatalyst: "TSMC and Samsung expanding factory capacities and placing huge orders for High-NA machines.",
-      decidedAt: "2026-05-18"
-    }
+    decisionState: "WATCHLIST",
+    nextReviewDate: "2026-06-15"
   }
 ];
 
-// Populate and stitch sample price history array for all 10 stocks.
+// Populate and stitch sample price history array for all 20 stocks.
 INITIAL_STOCKS.forEach(stock => {
   stock.priceHistory = generatePriceHistoryForTicker(stock.ticker, stock.stats.currentPrice);
   stock.asymmetry.asymmetryScore = calculateAsymmetryScore(stock.asymmetry);
@@ -637,8 +1029,7 @@ export const SAMPLE_EVENTS: MarketEvent[] = [
     ],
     stockImpacts: [
       { ticker: "VST", impact: "Positive", analysis: "Direct nuclear operator with scale, highly positioned to co-locate with hyperscalers." },
-      { ticker: "AMZN", impact: "Positive", analysis: "Secures power runway ahead of competitors experiencing grid constraints." },
-      { ticker: "EQIX", impact: "Neutral", analysis: "REIT spaces may experience mild demand tilt as hyperscalers prioritize direct-owned large nuclear sites." }
+      { ticker: "CEG", impact: "Positive", analysis: "Nuclear fleet leader excellently positioned to lock premium datacenter co-locations." }
     ]
   },
   {
@@ -654,7 +1045,6 @@ export const SAMPLE_EVENTS: MarketEvent[] = [
     ],
     stockImpacts: [
       { ticker: "NVDA", impact: "Positive", analysis: "Saves margin profiles and ensures continuous quarterly guidance beats." },
-      { ticker: "TSM", impact: "Positive", analysis: "Solidifies fabrication superiority and pricing power over packaging stages." },
       { ticker: "AMD", impact: "Neutral", analysis: "Maintains standard high market appetite for MI300 variants serving as secondary options." }
     ]
   },
@@ -670,7 +1060,8 @@ export const SAMPLE_EVENTS: MarketEvent[] = [
     ],
     stockImpacts: [
       { ticker: "IONQ", impact: "Positive", analysis: "Direct pioneer of trapped-ion systems, directly validates optical waveguide roadmap." },
-      { ticker: "GOOGL", impact: "Positive", analysis: "DeepMind quantum optimization teams gain massive computing simulation potential." }
+      { ticker: "GOOGL", impact: "Positive", analysis: "DeepMind quantum optimization teams gain massive computing simulation potential." },
+      { ticker: "IBM", impact: "Positive", analysis: "Validates superconducting quantum interconnect architectures as error-correction accelerates." }
     ]
   }
 ];

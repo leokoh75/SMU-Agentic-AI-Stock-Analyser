@@ -290,13 +290,9 @@ export function WatchlistUploadView({ stocks, onAddStock, onRemoveStock, onResto
                     className="w-full p-2 border border-gray-100 rounded-lg focus:outline-hidden"
                   >
                     <option value="AI">AI Systems</option>
-                    <option value="quantum">Quantum Computing</option>
-                    <option value="data centres">Data Centres</option>
-                    <option value="energy">Clean Energy</option>
-                    <option value="cloud">Cloud Hosting</option>
-                    <option value="chips">Semiconductor Silicon</option>
-                    <option value="infrastructure">Infrastructure Fab</option>
-                    <option value="software">SaaS Systems</option>
+                    <option value="Quantum">Quantum Computing</option>
+                    <option value="Data Centres">Data Centres</option>
+                    <option value="Power">Power & Grid</option>
                   </select>
                 </div>
                 <div className="space-y-1">
@@ -424,11 +420,9 @@ export function WatchlistUploadView({ stocks, onAddStock, onRemoveStock, onResto
               >
                 <option value="ALL">All Themes</option>
                 <option value="AI">AI</option>
-                <option value="quantum">Quantum</option>
-                <option value="data centres">Data Centres</option>
-                <option value="energy">Energy</option>
-                <option value="chips">Semiconductors</option>
-                <option value="cloud">Cloud</option>
+                <option value="Quantum">Quantum</option>
+                <option value="Data Centres">Data Centres</option>
+                <option value="Power">Power</option>
               </select>
             </div>
           </div>

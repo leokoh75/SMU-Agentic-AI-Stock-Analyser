@@ -32,7 +32,9 @@ import {
   Zap,
   MoreHorizontal,
   MessageSquare,
-  Bell
+  Bell,
+  Sun,
+  Moon
 } from "lucide-react";
 
 export default function App() {
@@ -40,6 +42,28 @@ export default function App() {
   const [showGlossary, setShowGlossary] = useState<boolean>(false);
   const [showDiscussion, setShowDiscussion] = useState<boolean>(false);
   const [showMoreMenu, setShowMoreMenu] = useState<boolean>(false);
+
+  const [darkMode, setDarkMode] = useState<boolean>(() => {
+    try {
+      const stored = localStorage.getItem("equilibrium_theme");
+      return stored === "dark";
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("equilibrium_theme", darkMode ? "dark" : "light");
+      if (darkMode) {
+        document.documentElement.classList.add("dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+      }
+    } catch (e) {
+      console.warn("Theme toggle error:", e);
+    }
+  }, [darkMode]);
 
   // Load registered price alerts from local memory
   const [alerts, setAlerts] = useState<PriceAlert[]>(() => {
@@ -514,7 +538,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col antialiased relative selection:bg-indigo-600 selection:text-white">
+    <div className={`min-h-screen ${darkMode ? "dark bg-slate-950 text-slate-100" : "bg-slate-50 text-slate-800"} flex flex-col antialiased relative selection:bg-indigo-600 selection:text-white`}>
       
       {/* Primary Branded Header - Streamlined for Mobile, Interactive for Desktop */}
       <header className="sticky top-0 z-50 bg-slate-900 border-b border-slate-850 px-4 md:px-6 py-3.5 flex justify-between items-center text-white">
@@ -658,6 +682,20 @@ export default function App() {
             <BookOpen className="w-3.5 h-3.5" />
             Beginner Glossary
           </button>
+
+          {/* Theme Toggle Button */}
+          <button
+            onClick={() => setDarkMode(!darkMode)}
+            title={darkMode ? "Switch to light mode" : "Switch to late-night screen mode"}
+            className="px-3 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 ml-1.5 active:scale-95"
+          >
+            {darkMode ? (
+              <Sun className="w-3.5 h-3.5 text-amber-400 fill-amber-400 animate-spin-slow" />
+            ) : (
+              <Moon className="w-3.5 h-3.5 text-indigo-300" />
+            )}
+            <span>{darkMode ? "Light" : "Dark"}</span>
+          </button>
         </nav>
 
         {/* Quick Help / Disqus Button - Streamlined for Mobile Navbar right side to maximize touch accessibility */}
@@ -685,6 +723,18 @@ export default function App() {
           >
             <BookOpen className="w-3.5 h-3.5" />
             <span className="text-[10px] uppercase font-extrabold leading-none">Glossary</span>
+          </button>
+          <div className="w-px bg-slate-700 self-stretch my-1" />
+          <button
+            onClick={() => setDarkMode(!darkMode)}
+            className="px-2 py-1 flex items-center gap-1 text-slate-300 hover:text-white transition-colors cursor-pointer"
+          >
+            {darkMode ? (
+              <Sun className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+            ) : (
+              <Moon className="w-3.5 h-3.5 text-indigo-300" />
+            )}
+            <span className="text-[10px] uppercase font-extrabold leading-none">{darkMode ? "Light" : "Dark"}</span>
           </button>
         </div>
       </header>

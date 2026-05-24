@@ -83,24 +83,30 @@ export function ThesisView({ stocks, selectedTicker, onUpdateStock }: ThesisView
         let roast = "";
         const theme = activeStock.theme.toLowerCase();
 
-        if (activeStock.ticker === "NVDA" || theme.includes("chips") || theme.includes("semiconductor")) {
-          roast = `### 🚨 STRESS-TEST OUTCOME: CRITICAL CHALLENGES FOR SEMICONDUCTORS (${activeStock.ticker})
+        if (theme === "ai") {
+          roast = `### 🚨 STRESS-TEST OUTCOME: CRITICAL CHALLENGES FOR AI SYSTEMS (${activeStock.ticker})
 
-1. **Hyperscaler Insourcing Threat**: Meta, Google (TPUs), Amazon, and Microsoft are aggressively moving towards custom ASIC architectures to bypass premium chipmaker margins. If insourcing exceeds 40% of CapEx by late 2206, demand multiplier projections crumble.
-2. **CoWoS Yield Fragility**: High Bandwidth Memory (HMB3e) and advanced interposers at foundries remain the absolute rate-limiters. A 10% supply disruption can lead to massive revenue deferrals.
+1. **Hyperscaler Insourcing Threat**: Meta, Google (TPUs), Amazon, and Microsoft are aggressively moving towards custom ASIC architectures to bypass premium chipmaker margins. If insourcing exceeds 40% of CapEx by late 2026, demand multiplier projections crumble.
+2. **CoWoS Yield Fragility**: High Bandwidth Memory (HBM3e) and advanced interposers at foundries remain the absolute rate-limiters. A 10% supply disruption can lead to massive revenue deferrals.
 3. **Valuation Margin of Safety**: Trading at high multiples, any indication of datacenter CAPEX flattening triggers catastrophic valuation contraction, as multiples compress to cyclical averages.`;
-        } else if (theme.includes("energy") || activeStock.ticker === "VST") {
-          roast = `### 🚨 STRESS-TEST OUTCOME: CRITICAL CHALLENGES FOR ENERGY / INFRASTRUCTURE (${activeStock.ticker})
+        } else if (theme === "power") {
+          roast = `### 🚨 STRESS-TEST OUTCOME: CRITICAL CHALLENGES FOR ENERGY & POWER (${activeStock.ticker})
 
 1. **Grid Queue Bottlenecks**: Co-location sounds brilliant, but upgrading interconnections and transmission systems through the federal regulatory bodies routinely takes 3-5 years. PPAs may be signed, but capital cycles will stay delayed.
 2. **Uranium Fuel Sourcing constraints**: Advanced and standard SMR or traditional nuclear plants depend on highly specialized HALEU fuel enrichment circles, heavily bottlenecked by global geopolitical supply chains.
-3. **PPA Cap contracts limits**: Datacenters will demand fixed price agreements, caping energy operators' relative upside leverage during peak municipal heatwaves.`;
-        } else if (theme.includes("quantum") || activeStock.ticker === "IONQ") {
+3. **PPA Cap contracts limits**: Datacenters will demand fixed price agreements, capping energy operators' relative upside leverage during peak municipal heatwaves.`;
+        } else if (theme === "quantum") {
           roast = `### 🚨 STRESS-TEST OUTCOME: CRITICAL CHALLENGES FOR QUANTUM COMPUTING (${activeStock.ticker})
 
 1. **Pre-Revenue Lifespan**: Extreme cash burn. While they possess a solid balance sheet buffer, commercialization timescales to logical fault-tolerance at enterprise levels are likely 5-8 years out. Dilution cycles may dilate.
 2. **Silicon-Photonic Interconnect Latency**: Connecting dilution units requires waveguides that currently experience high decibel losses. If waveguides can't link, quantum systems can't scale modularly.
 3. **Alternative Qubit Superiority**: Trapped-ion is stable but slow. If superconducting or topological qubits achieve error correction first, trapped-ion pipelines face absolute replacement risk.`;
+        } else if (theme === "data centres") {
+          roast = `### 🚨 STRESS-TEST OUTCOME: CHANNELS & MOAT STRESS REPORT FOR DATA CENTRES (${activeStock.ticker})
+
+1. **Hyperscaler bare-metal margin squeeze**: Public clouds and hosting environments are heading into severe bare-metal price wars. Without proprietary custom SaaS wrappers, compute units become standard commodities.
+2. **Cooling Supply Constraints**: Hyperscalers approving liquid cooling upgrades find cooling fluid (PFAS restrictions) and heat exchangers severely back-ordered, delaying data-center deployment targets.
+3. **Underlying Rates Pressures**: Prolonged high capital cost cycles strain high net debt infrastructure operations, limiting AFFO payout capability.`;
         } else {
           roast = `### 🚨 STRESS-TEST OUTCOME: CHANNELS & MOAT STRESS REPORT for ${activeStock.ticker}
 

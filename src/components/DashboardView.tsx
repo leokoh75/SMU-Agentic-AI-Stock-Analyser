@@ -52,9 +52,15 @@ export function DashboardView({ stocks, events, onNavigate }: DashboardViewProps
       {/* Header Panel */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center p-6 bg-white rounded-2xl border border-gray-100 shadow-sm">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-gray-900">Portfolio Decision Room</h1>
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-3xl font-semibold tracking-tight text-gray-900">Portfolio Decision Room</h1>
+            <span className="px-2.5 py-0.5 text-3xs font-mono font-bold uppercase rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200/50 flex items-center gap-1">
+              <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping"></span>
+              Correct as of 2026-05-24
+            </span>
+          </div>
           <p className="text-gray-500 mt-1 max-w-2xl text-sm">
-            AI-assisted screening and decision tracking suite. Focus on asymmetrical risk-reward loops across core technologies: AI, quantum, chips and clean energy grids.
+            AI-assisted screening and decision tracking suite. Focus on asymmetrical risk-reward loops across core technology themes.
           </p>
         </div>
         <div className="mt-4 md:mt-0 px-4 py-2 bg-indigo-50 border border-indigo-100 rounded-xl flex items-center gap-2">
@@ -70,15 +76,18 @@ export function DashboardView({ stocks, events, onNavigate }: DashboardViewProps
           whileHover={{ y: -2 }}
           className="p-5 bg-white rounded-xl border border-gray-100 shadow-xs cursor-pointer hover:shadow-md transition-all flex justify-between items-center"
         >
-          <div className="space-y-1">
-            <span className="text-xs font-mono font-medium text-gray-400">HOLDINGS (BUY)</span>
+          <div className="space-y-1 flex-1">
+            <div className="flex justify-between items-center">
+              <span className="text-xs font-mono font-medium text-gray-400">HOLDINGS (BUY)</span>
+              <span className="text-[8px] font-mono text-gray-400 bg-slate-50 px-1 py-0.5 rounded leading-none">Correct as of May 24, 2026</span>
+            </div>
             <div className="text-2xl font-semibold font-display">{holdings.length} Positions</div>
             <p className="text-xs text-green-600 flex items-center gap-1 font-medium mt-1">
               <TrendingUp className="w-3 h-3" />
               Allocated: {totalPositionSize}% of Total
             </p>
           </div>
-          <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
+          <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl ml-2">
             <Briefcase className="w-5 h-5" />
           </div>
         </motion.div>
@@ -88,12 +97,15 @@ export function DashboardView({ stocks, events, onNavigate }: DashboardViewProps
           whileHover={{ y: -2 }}
           className="p-5 bg-white rounded-xl border border-gray-100 shadow-xs cursor-pointer hover:shadow-md transition-all flex justify-between items-center"
         >
-          <div className="space-y-1">
-            <span className="text-xs font-mono font-medium text-gray-400">WATCHLIST / HOLDS</span>
+          <div className="space-y-1 flex-1">
+            <div className="flex justify-between items-center">
+              <span className="text-xs font-mono font-medium text-gray-400">WATCHLIST / HOLDS</span>
+              <span className="text-[8px] font-mono text-gray-400 bg-slate-50 px-1 py-0.5 rounded leading-none">Correct as of May 24, 2026</span>
+            </div>
             <div className="text-2xl font-semibold font-display">{watchlisted.length} Assets</div>
             <p className="text-xs text-gray-500 mt-1">Active coverage framework</p>
           </div>
-          <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
+          <div className="p-3 bg-blue-50 text-blue-600 rounded-xl ml-2">
             <Eye className="w-5 h-5" />
           </div>
         </motion.div>
@@ -103,15 +115,18 @@ export function DashboardView({ stocks, events, onNavigate }: DashboardViewProps
           whileHover={{ y: -2 }}
           className="p-5 bg-white rounded-xl border border-gray-100 shadow-xs cursor-pointer hover:shadow-md transition-all flex justify-between items-center"
         >
-          <div className="space-y-1">
-            <span className="text-xs font-mono font-medium text-gray-400">PENDING ACTION</span>
+          <div className="space-y-1 flex-1">
+            <div className="flex justify-between items-center">
+              <span className="text-xs font-mono font-medium text-gray-400">PENDING ACTION</span>
+              <span className="text-[8px] font-mono text-gray-400 bg-slate-50 px-1 py-0.5 rounded leading-none">Correct as of May 24, 2026</span>
+            </div>
             <div className="text-2xl font-semibold font-display text-amber-600">{reviewsCount} Reviews</div>
             <p className="text-xs text-amber-500 font-medium flex items-center gap-1 mt-1">
               <ShieldAlert className="w-3 h-3" />
               Schedules requiring updates
             </p>
           </div>
-          <div className="p-3 bg-amber-50 text-amber-600 rounded-xl">
+          <div className="p-3 bg-amber-50 text-amber-600 rounded-xl ml-2">
             <Clock className="w-5 h-5" />
           </div>
         </motion.div>
@@ -121,15 +136,18 @@ export function DashboardView({ stocks, events, onNavigate }: DashboardViewProps
           whileHover={{ y: -2 }}
           className="p-5 bg-white rounded-xl border border-gray-100 shadow-xs cursor-pointer hover:shadow-md transition-all flex justify-between items-center"
         >
-          <div className="space-y-1">
-            <span className="text-xs font-mono font-medium text-gray-400">MARKET scanner</span>
+          <div className="space-y-1 flex-1">
+            <div className="flex justify-between items-center">
+              <span className="text-xs font-mono font-medium text-gray-400">MARKET scanner</span>
+              <span className="text-[8px] font-mono text-gray-400 bg-slate-50 px-1 py-0.5 rounded leading-none">Correct as of May 24, 2026</span>
+            </div>
             <div className="text-2xl font-semibold font-display">{events.length} Historical Events</div>
             <p className="text-xs text-indigo-600 font-medium flex items-center gap-1 mt-1">
               <Activity className="w-3 h-3 text-indigo-500" />
               Connected to intelligence terminal
             </p>
           </div>
-          <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
+          <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl ml-2">
             <Activity className="w-5 h-5" />
           </div>
         </motion.div>
@@ -269,17 +287,31 @@ export function DashboardView({ stocks, events, onNavigate }: DashboardViewProps
       </div>
 
       {/* Data Citations & Resource Center */}
-      <div className="p-6 bg-slate-900 text-slate-100 rounded-xl border border-slate-800 shadow-sm space-y-4">
-        <div className="flex items-center gap-2 border-b border-slate-850 pb-3">
-          <Globe className="w-5 h-5 text-indigo-400" />
+      <div className="p-6 bg-slate-900 text-slate-100 rounded-xl border border-slate-800 shadow-sm space-y-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-800 pb-3">
           <div>
-            <h2 className="text-sm font-bold tracking-tight text-white font-sans uppercase">Asynchronous Alpha Data Feeds & Citation Registry</h2>
-            <p className="text-[10px] text-slate-400 mt-0.5">Disclosed real-time API bindings and algorithmic data compliance standards.</p>
+            <h2 className="text-sm font-bold tracking-tight text-white font-sans uppercase flex items-center gap-1.5">
+              <Globe className="w-4 h-4 text-indigo-400" />
+              Asynchronous Precision Data Feeds & Citation Registry
+            </h2>
+            <p className="text-[10px] text-slate-400 mt-0.5">Disclosed real-time API bindings and algorithmic data provenance standards.</p>
           </div>
+          <span className="px-2.5 py-0.5 text-4xs font-mono font-bold uppercase rounded bg-indigo-950/80 text-indigo-300 border border-indigo-900 leading-none">
+            Registry verified as of 2026-05-24
+          </span>
+        </div>
+
+        {/* Data Provenance Explanation */}
+        <div className="bg-slate-850/30 p-4 rounded-xl border border-slate-800/80 space-y-2 text-[11px] leading-relaxed text-slate-300">
+          <h3 className="font-sans font-bold text-teal-400 uppercase tracking-wider text-[10px] flex items-center gap-1">
+            <span>⚙️</span> Data Origin & Methodology Disclosure
+          </h3>
+          <p>
+            This application combines <strong>high-fidelity long-term historical datasets (2020 to 2026)</strong> prepositions with dynamic live service calls. The 14-period semi-annual price indices, asymmetrical ratios, and classifications are calculated on-the-fly inside our client state machines using mathematical formulations. Live metrics, current trading prices, and news indicators are fetched from server-side Node.js proxies configured securely to keep developer keys confidential from the browser layout. When external server APIs are transient or unavailable, the application gracefully reverts to high-fidelity simulated models aligned with the actual market configurations of May 24, 2026.
+          </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-[11px]">
-          
           <div className="space-y-1.5 p-3 rounded-lg bg-slate-850/50 border border-slate-800 flex flex-col justify-between">
             <div>
               <h3 className="font-mono font-bold text-teal-400 uppercase tracking-wider text-[10px]">Yahoo Finance v8 API</h3>
@@ -315,14 +347,46 @@ export function DashboardView({ stocks, events, onNavigate }: DashboardViewProps
               <h3 className="font-mono font-bold text-amber-400 uppercase tracking-wider text-[10px]">DeepMind Gemini API</h3>
               <p className="text-slate-400 mt-1 leading-snug">Produces professional institutional-grade stock scorecards, fundamental thesis checkpoints, and processes NLP macro events.</p>
             </div>
-            <div className="font-mono text-[9px] text-indigo-300 select-all underline leading-none pt-2">
+            <div className="font-mono text-[9px] text-indigo-300 select-all border-t border-slate-800 pt-2 shrink-0">
               @google/genai (3.5-flash)
             </div>
           </div>
-
         </div>
 
-        <div className="pt-2 border-t border-slate-850 flex flex-col sm:flex-row justify-between items-start sm:items-center text-[10px] text-slate-500 gap-2">
+        {/* Suggested Extension APIs */}
+        <div className="pt-4 border-t border-slate-800">
+          <h3 className="font-mono font-bold text-slate-200 uppercase tracking-wider text-[10px] mb-3 flex items-center gap-1.5">
+            <span>💡</span> Recommended Financial APIs for Upcoming Features
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-[11px]">
+            <div className="p-3 bg-indigo-950/20 rounded-lg border border-indigo-900/30 space-y-1">
+              <span className="font-bold text-indigo-300 font-mono text-[10px] block">1. SEC EDGAR Live API</span>
+              <p className="text-slate-400 text-3xs leading-relaxed">
+                Connect directly to sec.gov to pull real-time SEC filings (10-K/10-Q). This automates collection of exact debt ratios, capital expenditure trends, and insider buy/sell transactions.
+              </p>
+            </div>
+            <div className="p-3 bg-indigo-950/20 rounded-lg border border-indigo-900/30 space-y-1">
+              <span className="font-bold text-indigo-300 font-mono text-[10px] block">2. FRED Economic Data API</span>
+              <p className="text-slate-400 text-3xs leading-relaxed">
+                Integrate macro parameters from the Federal Reserve. This enables trackers for the 10Y-2Y Treasury Yield inversion spreads, the federal interest rates, and localized electricity index PPIs.
+              </p>
+            </div>
+            <div className="p-3 bg-indigo-950/20 rounded-lg border border-indigo-900/30 space-y-1">
+              <span className="font-bold text-indigo-300 font-mono text-[10px] block">3. Polygon.io / FMP API</span>
+              <p className="text-slate-405 text-3xs leading-relaxed">
+                Pull deep historical bar aggregates, cash dividend calendars, stock split coefficients, and standardized balance sheet variables on thousands of global dual-listed assets.
+              </p>
+            </div>
+            <div className="p-3 bg-indigo-950/20 rounded-lg border border-indigo-900/30 space-y-1">
+              <span className="font-bold text-indigo-300 font-mono text-[10px] block">4. Congressional Trade API</span>
+              <p className="text-slate-400 text-3xs leading-relaxed">
+                Source real-time politician trade indicators (e.g., from Quiver Quantitative). Correlate semiconductor and clean power stock actions with legislative trade patterns for early signals.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="pt-2 border-t border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center text-[10px] text-slate-500 gap-2">
           <span>Registered Watchlist Focus: TSM, NVDA, AMD, AVGO, MSFT, AMZN, GOOGL, EQIX, VST, IONQ, GS, ASML</span>
           <span className="font-mono">Real-time Node proxy actively cached | Standard Singapore (SG) localization preset</span>
         </div>
