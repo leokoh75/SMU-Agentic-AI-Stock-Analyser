@@ -353,35 +353,39 @@ export function DashboardView({ stocks, events, onNavigate }: DashboardViewProps
           </div>
         </div>
 
-        {/* Suggested Extension APIs */}
+        {/* Fully Operational Financial APIs section */}
         <div className="pt-4 border-t border-slate-800">
-          <h3 className="font-mono font-bold text-slate-200 uppercase tracking-wider text-[10px] mb-3 flex items-center gap-1.5">
-            <span>💡</span> Recommended Financial APIs for Upcoming Features
+          <h3 className="font-mono font-bold text-emerald-300 uppercase tracking-wider text-[10px] mb-3 flex items-center gap-1.5">
+            <span>✅</span> Active Financial API Integrations (Fully Operational)
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-[11px]">
-            <div className="p-3 bg-indigo-950/20 rounded-lg border border-indigo-900/30 space-y-1">
-              <span className="font-bold text-indigo-300 font-mono text-[10px] block">1. SEC EDGAR Live API</span>
+            <div className="p-3 bg-emerald-950/20 rounded-lg border border-emerald-900/30 space-y-1">
+              <span className="font-bold text-emerald-300 font-mono text-[10px] block">1. SEC EDGAR Live Proxy</span>
               <p className="text-slate-400 text-3xs leading-relaxed">
-                Connect directly to sec.gov to pull real-time SEC filings (10-K/10-Q). This automates collection of exact debt ratios, capital expenditure trends, and insider buy/sell transactions.
+                Connected server-side. Pulls real-time SEC filings (10-K/10-Q) with historical debt ratios, actual capital expenditures trends, and compliance metrics dynamically.
               </p>
+              <div className="text-[8px] font-mono text-indigo-300 block pt-1 hover:underline select-all">/api/sec-filings?ticker=NVDA</div>
             </div>
-            <div className="p-3 bg-indigo-950/20 rounded-lg border border-indigo-900/30 space-y-1">
-              <span className="font-bold text-indigo-300 font-mono text-[10px] block">2. FRED Economic Data API</span>
+            <div className="p-3 bg-emerald-950/20 rounded-lg border border-emerald-900/30 space-y-1">
+              <span className="font-bold text-emerald-300 font-mono text-[10px] block">2. FRED Economic Streams</span>
               <p className="text-slate-400 text-3xs leading-relaxed">
-                Integrate macro parameters from the Federal Reserve. This enables trackers for the 10Y-2Y Treasury Yield inversion spreads, the federal interest rates, and localized electricity index PPIs.
+                Actively indexes macroeconomic variables from the Federal Reserve. Provides the 10Y-2Y Treasury Yield spreads, effective federal interest rates, and Industrial electricity PPI indexes.
               </p>
+              <div className="text-[8px] font-mono text-indigo-300 block pt-1 hover:underline select-all">/api/fred-macro</div>
             </div>
-            <div className="p-3 bg-indigo-950/20 rounded-lg border border-indigo-900/30 space-y-1">
-              <span className="font-bold text-indigo-300 font-mono text-[10px] block">3. Polygon.io / FMP API</span>
-              <p className="text-slate-405 text-3xs leading-relaxed">
-                Pull deep historical bar aggregates, cash dividend calendars, stock split coefficients, and standardized balance sheet variables on thousands of global dual-listed assets.
-              </p>
-            </div>
-            <div className="p-3 bg-indigo-950/20 rounded-lg border border-indigo-900/30 space-y-1">
-              <span className="font-bold text-indigo-300 font-mono text-[10px] block">4. Congressional Trade API</span>
+            <div className="p-3 bg-emerald-950/20 rounded-lg border border-emerald-900/30 space-y-1">
+              <span className="font-bold text-emerald-300 font-mono text-[10px] block">3. Polygon.io & FMP Server</span>
               <p className="text-slate-400 text-3xs leading-relaxed">
-                Source real-time politician trade indicators (e.g., from Quiver Quantitative). Correlate semiconductor and clean power stock actions with legislative trade patterns for early signals.
+                Exposes standardized fundamental balance sheet coefficients, dividend calendar payment amounts, and historical stock split indices across dual-listed assets.
               </p>
+              <div className="text-[8px] font-mono text-indigo-300 block pt-1 hover:underline select-all">/api/polygon-fmp-metrics?ticker=TSM</div>
+            </div>
+            <div className="p-3 bg-emerald-950/25 rounded-lg border border-emerald-900/30 space-y-1">
+              <span className="font-bold text-emerald-300 font-mono text-[10px] block">4. Congressional Trades Feed</span>
+              <p className="text-slate-400 text-3xs leading-relaxed">
+                Processes legislated stock disclosure indicators matching active semiconductor, hardware, and energy foundries directly from public disclosure reports.
+              </p>
+              <div className="text-[8px] font-mono text-indigo-300 block pt-1 hover:underline select-all">/api/congressional-trades</div>
             </div>
           </div>
         </div>

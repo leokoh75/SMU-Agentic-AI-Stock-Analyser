@@ -27,6 +27,16 @@ export function ScorecardView({ stocks, selectedTicker, onUpdateStock, onNavigat
   const [generating, setGenerating] = useState(false);
   const [errorText, setErrorText] = useState<string | null>(null);
 
+  // Dynamic Category Filters
+  const [activeTheme, setActiveTheme] = useState<string>("All");
+  const [limitToTop5, setLimitToTop5] = useState<boolean>(false);
+
+  // Live API terminal states
+  const [activeApiTab, setActiveApiTab] = useState<"sec" | "fred" | "polygon" | "congress">("sec");
+  const [apiLoading, setApiLoading] = useState<boolean>(false);
+  const [apiResult, setApiResult] = useState<any>(null);
+  const [apiError, setApiError] = useState<string | null>(null);
+
   // Sync state if selectedTicker prop changes (cross-nav)
   useEffect(() => {
     if (selectedTicker && stocks.some(s => s.ticker === selectedTicker)) {
@@ -36,6 +46,89 @@ export function ScorecardView({ stocks, selectedTicker, onUpdateStock, onNavigat
 
   // Active stock object
   const activeStock = stocks.find(s => s.ticker === activeTicker);
+
+  // Fetch live API streams reactively
+  const fetchLiveApiStream = async (streamType: "sec" | "fred" | "polygon" | "congress") => {
+    if (!activeStock) return;
+    setApiLoading(true);
+    setApiError(null);
+    setApiResult(null);
+    try {
+      let endpoint = "";
+      if (streamType === "sec") {
+        endpoint = `/api/sec-filings?ticker=${activeStock.ticker}`;
+      } else if (streamType === "fred") {
+        endpoint = `/api/fred-macro`;
+      } else if (streamType === "polygon") {
+        endpoint = `/api/polygon-fmp-metrics?ticker=${activeStock.ticker}`;
+      } else {
+        endpoint = `/api/congressional-trades?ticker=${activeStock.ticker}`;
+      }
+
+      const res = await fetch(endpoint);
+      const data = await res.json();
+      if (data && data.success) {
+        setApiResult(data);
+      } else {
+        setApiError(data?.error || "Error streaming active feed payload.");
+      }
+    } catch (err: any) {
+      setApiError("Feed timed out or connectivity was interrupted: " + err.message);
+    } finally {
+      setApiLoading(false);
+    }
+  };
+
+  // Run automatically when ticker or API tab changes
+  useEffect(() => {
+    fetchLiveApiStream(activeApiTab);
+  }, [activeApiTab, activeTicker]);
+
+  // Helper inside component to get dropdown stocks dynamically
+  const getFilteredDropdownStocks = () => {
+    let list = [...stocks];
+    
+    // Filter by theme
+    if (activeTheme !== "All") {
+      list = list.filter(s => {
+        const sTheme = s.theme.toLowerCase().replace(/\s+/g, "");
+        const targetTheme = activeTheme.toLowerCase().replace(/\s+/g, "");
+        return sTheme.includes(targetTheme) || targetTheme.includes(sTheme) ||
+               (activeTheme === "Power" && sTheme.includes("energy"));
+      });
+    }
+    
+    // Limit to top 5 ranked within that category
+    if (limitToTop5) {
+      if (activeTheme !== "All") {
+        const top5List = getTop5ByCategory(activeTheme);
+        const top5Tickers = new Set(top5List.map(t => t.ticker));
+        list = list.filter(s => top5Tickers.has(s.ticker));
+      } else {
+        // Top 5 overall by calculated asymmetry ratio score
+        const sorted = list.map(s => {
+          const num = s.asymmetry.upside + s.asymmetry.conviction + s.asymmetry.catalyst;
+          const den = s.asymmetry.downside + s.asymmetry.risk;
+          const calcAsymmetry = parseFloat((num / (den || 1)).toFixed(2));
+          return { ...s, rankScore: s.asymmetry.asymmetryScore ?? calcAsymmetry };
+        }).sort((a, b) => b.rankScore - a.rankScore);
+        
+        const top5Tickers = new Set(sorted.slice(0, 5).map(t => t.ticker));
+        list = list.filter(s => top5Tickers.has(s.ticker));
+      }
+    }
+    
+    return list;
+  };
+
+  const filteredDropdownStocks = getFilteredDropdownStocks();
+
+  // Sync selected ticker if it drops out of the active selection filter metrics!
+  useEffect(() => {
+    if (filteredDropdownStocks.length > 0 && !filteredDropdownStocks.some(s => s.ticker === activeTicker)) {
+      setActiveTicker(filteredDropdownStocks[0].ticker);
+    }
+  }, [activeTheme, limitToTop5]);
 
   if (!activeStock) {
     return (
@@ -215,20 +308,55 @@ export function ScorecardView({ stocks, selectedTicker, onUpdateStock, onNavigat
           </p>
         </div>
 
-        {/* Dropdown Selector */}
-        <div className="flex items-center gap-2 font-mono text-xs">
-          <label className="text-gray-400 font-semibold font-sans">Focus Stock:</label>
-          <select
-            value={activeTicker}
-            onChange={(e) => setActiveTicker(e.target.value)}
-            className="p-2 border border-gray-150 rounded-xl bg-slate-50 text-gray-800 font-bold focus:outline-hidden"
-          >
-            {stocks.map((s) => (
-              <option key={s.ticker} value={s.ticker}>
-                {s.ticker} - {s.companyName.slice(0, 20)}
-              </option>
+        {/* Category filtering ribbon, top 5 ranked filter, and Dropdown Selector */}
+        <div className="flex flex-col xl:flex-row items-stretch xl:items-center gap-4 text-xs">
+          
+          {/* Active Category Ribbon */}
+          <div className="flex flex-wrap items-center gap-1 bg-slate-100 p-1.5 rounded-xl">
+            {["All", "AI", "Quantum", "Data Centres", "Power"].map((cat) => (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => setActiveTheme(cat)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all ${
+                  activeTheme === cat
+                    ? "bg-indigo-600 text-white shadow-xs"
+                    : "text-gray-500 hover:text-gray-900 bg-transparent hover:bg-slate-200/50"
+                }`}
+              >
+                {cat === "All" ? "✨ All Topics" : cat === "Power" ? "⚡ Power" : cat}
+              </button>
             ))}
-          </select>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Top 5 Dynamic Lock Checkbox */}
+            <label className="flex items-center gap-2 cursor-pointer select-none border border-gray-150 rounded-xl px-3 py-1.5 bg-slate-50 hover:bg-slate-100 transition-all font-sans text-gray-600 font-medium whitespace-nowrap">
+              <input
+                type="checkbox"
+                checked={limitToTop5}
+                onChange={(e) => setLimitToTop5(e.target.checked)}
+                className="rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4 accent-indigo-600"
+              />
+              <span className="text-3xs font-mono uppercase tracking-wider font-bold">TOP 5 RANKED INDEX ONLY</span>
+            </label>
+
+            {/* Dropdown Selector */}
+            <div className="flex items-center gap-2 font-mono text-xs">
+              <label className="text-gray-400 font-semibold font-sans">Active Target:</label>
+              <select
+                value={activeTicker}
+                onChange={(e) => setActiveTicker(e.target.value)}
+                className="p-2 border border-gray-150 rounded-xl bg-white text-gray-800 font-bold focus:outline-hidden min-w-[130px] shadow-3xs"
+              >
+                {filteredDropdownStocks.map((s) => (
+                  <option key={s.ticker} value={s.ticker}>
+                    {s.ticker} - {s.companyName.slice(0, 20)}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -575,7 +703,7 @@ export function ScorecardView({ stocks, selectedTicker, onUpdateStock, onNavigat
           <div className="bg-slate-900 text-slate-100 p-6 rounded-xl border border-slate-800 shadow-md space-y-4">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-800 pb-3 gap-2">
               <h3 className="text-xs font-semibold font-mono uppercase tracking-wider text-slate-350 flex items-center gap-1.5">
-                <ShieldCheck className="w-5 h-5 text-emerald-400" />
+                <ShieldCheck className="w-5 h-5 text-emerald-300" />
                 Screen 5: Asymmetric pick calculation
               </h3>
 
@@ -598,7 +726,7 @@ export function ScorecardView({ stocks, selectedTicker, onUpdateStock, onNavigat
                 <div className="space-y-1 bg-slate-850 p-2.5 rounded-lg">
                   <div className="flex justify-between font-mono font-bold">
                     <span className="text-slate-300 font-sans">1. Upside Potential</span>
-                    <span className="text-emerald-400 font-mono">{activeStock.asymmetry.upside || 3}/5</span>
+                    <span className="text-emerald-300 font-mono">{activeStock.asymmetry.upside || 3}/5</span>
                   </div>
                   <input
                     type="range" min="1" max="5" step="1"
@@ -612,7 +740,7 @@ export function ScorecardView({ stocks, selectedTicker, onUpdateStock, onNavigat
                 <div className="space-y-1 bg-slate-850 p-2.5 rounded-lg">
                   <div className="flex justify-between font-mono font-bold">
                     <span className="text-slate-300 font-sans">2. Analyst Conviction</span>
-                    <span className="text-emerald-400 font-mono">{activeStock.asymmetry.conviction || 3}/5</span>
+                    <span className="text-emerald-300 font-mono">{activeStock.asymmetry.conviction || 3}/5</span>
                   </div>
                   <input
                     type="range" min="1" max="5" step="1"
@@ -626,7 +754,7 @@ export function ScorecardView({ stocks, selectedTicker, onUpdateStock, onNavigat
                 <div className="space-y-1 bg-slate-850 p-2.5 rounded-lg">
                   <div className="flex justify-between font-mono font-bold">
                     <span className="text-slate-300 font-sans">3. Regulatory / Yield Catalyst</span>
-                    <span className="text-emerald-400 font-mono">{activeStock.asymmetry.catalyst || 3}/5</span>
+                    <span className="text-emerald-300 font-mono">{activeStock.asymmetry.catalyst || 3}/5</span>
                   </div>
                   <input
                     type="range" min="1" max="5" step="1"
@@ -672,7 +800,7 @@ export function ScorecardView({ stocks, selectedTicker, onUpdateStock, onNavigat
                 {/* Score panel box */}
                 <div className="p-3 bg-emerald-950/40 border border-emerald-900/40 rounded-lg flex justify-between items-center mt-3">
                   <div>
-                    <span className="text-4xs font-mono font-bold uppercase text-emerald-400">calculated symmetry ratio</span>
+                    <span className="text-4xs font-mono font-bold uppercase text-emerald-300">calculated symmetry ratio</span>
                     <p className="text-3xs text-emerald-300/80 leading-relaxed max-w-[200px]">Optimal picks reflect scores &gt; 1.8x. Highly asymmetric.</p>
                   </div>
                   <span className="font-mono text-2xl font-bold bg-emerald-500 text-slate-900 px-3 py-1 rounded-lg shadow-sm">
@@ -696,6 +824,296 @@ export function ScorecardView({ stocks, selectedTicker, onUpdateStock, onNavigat
         </div>
 
       </div>
+
+      {/* NEW ACTIVE FINANCIAL APIS STREAMS WORKSPACE TERMINAL */}
+      <div id="refresh-hud" className="bg-slate-900 text-slate-100 rounded-2xl border border-slate-800 p-6 shadow-xl space-y-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-800 pb-4 gap-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+              <h2 className="text-base font-bold font-mono tracking-wide uppercase text-white flex items-center gap-2">
+                📡 Active Financial Data Streams Terminal
+              </h2>
+            </div>
+            <p className="text-[11px] text-slate-400 mt-1 max-w-2xl leading-normal">
+              Fully operational full-stack interface. Select an external api node feed to query and display audited financial factors for <strong>{activeStock.ticker}</strong> in real-time.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 bg-slate-950 p-1 rounded-lg border border-slate-800 font-mono text-[10px]">
+            <span className="text-slate-500">Live Agent Target:</span>
+            <span className="text-indigo-400 font-bold select-all">{activeStock.ticker}</span>
+          </div>
+        </div>
+
+        {/* Tab Selection Ribbon for API streams */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          {[
+            { id: "sec", label: "SEC EDGAR 10-K/Q", icon: "🏛️" },
+            { id: "fred", label: "FRED Macro Indices", icon: "📈" },
+            { id: "polygon", label: "Polygon/FMP Sheets", icon: "💠" },
+            { id: "congress", label: "Congressional Buys", icon: "🗳️" }
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveApiTab(tab.id as any)}
+              className={`p-3 rounded-xl border font-mono text-2xs font-bold text-left transition-all cursor-pointer flex flex-col justify-between h-[65px] ${
+                activeApiTab === tab.id
+                  ? "bg-indigo-600/25 border-indigo-550 text-indigo-200 shadow-sm shadow-indigo-950/40"
+                  : "bg-slate-950 hover:bg-slate-850 border-slate-800 text-slate-400"
+              }`}
+            >
+              <span className="text-base">{tab.icon}</span>
+              <span className="mt-1">{tab.label}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Payload output container */}
+        <div className="bg-slate-950 rounded-xl border border-slate-800 overflow-hidden min-h-[220px]">
+          
+          {/* Node Proxy Status bar */}
+          <div className="flex justify-between items-center bg-slate-900 border-b border-slate-800 px-4 py-2 text-[10px] font-mono text-slate-400">
+            <span className="flex items-center gap-1.5">
+              <span className="text-[8px] bg-slate-800 text-slate-350 px-1.5 py-0.5 rounded font-bold uppercase">FEED STATE</span>
+              {apiLoading ? (
+                <span className="text-indigo-400 flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-indigo-500 animate-ping inline-block" />
+                  Requesting Server Gateway...
+                </span>
+              ) : apiError ? (
+                <span className="text-rose-400">Disconnected: {apiError}</span>
+              ) : (
+                <span className="text-emerald-300 flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  Active Connection Synchronized
+                </span>
+              )}
+            </span>
+
+            <span>
+              {apiResult?.lastFetched ? `Updated: ${new Date(apiResult.lastFetched).toLocaleTimeString()}` : "Listening..."}
+            </span>
+          </div>
+
+          <div className="p-5">
+            {apiLoading ? (
+              <div className="flex flex-col items-center justify-center py-12 space-y-3 font-mono text-slate-400 text-2xs">
+                <span className="w-8 h-8 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin" />
+                <span>Interrogating external proxy node tables ({activeApiTab.toUpperCase()})...</span>
+              </div>
+            ) : apiError ? (
+              <div className="p-4 bg-rose-950/20 border border-rose-900/30 rounded-lg text-rose-350 font-mono text-xs text-center">
+                ⚠️ {apiError}
+              </div>
+            ) : apiResult ? (
+              <div className="space-y-5 animate-fade-in text-xs font-sans">
+                
+                {/* 1. SEC RENDERING */}
+                {activeApiTab === "sec" && (
+                  <div className="space-y-4">
+                    <div className="flex justify-between text-[11px] border-b border-slate-800 pb-2">
+                      <span className="text-slate-400 font-mono">EDGAR Search Target: <strong className="text-slate-200">{apiResult.ticker}</strong></span>
+                      <span className="text-teal-400 font-mono text-[10px]/none underline bg-teal-950/30 px-2 py-1 rounded">{apiResult.source}</span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {apiResult.filings?.map((f: any, idx: number) => (
+                        <div key={idx} className="bg-slate-900/80 border border-slate-800 p-4 rounded-xl space-y-3 flex flex-col justify-between">
+                          <div className="space-y-2">
+                            <div className="flex justify-between items-center">
+                              <span className="text-xs font-bold font-mono text-indigo-400 bg-indigo-950/40 border border-indigo-900/60 px-2 py-0.5 rounded">
+                                Form {f.form}
+                              </span>
+                              <span className="text-[10px] text-slate-500 font-mono">Filed: {f.filingDate}</span>
+                            </div>
+                            
+                            <p className="text-[11px] text-slate-300 leading-relaxed">
+                              {f.highlights}
+                            </p>
+
+                            <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-850 text-center font-mono text-2xs">
+                              <div>
+                                <span className="text-slate-500 block text-[9px] uppercase">Revenue</span>
+                                <strong className="text-slate-200 block mt-0.5">{f.totalRevenue}</strong>
+                              </div>
+                              <div>
+                                <span className="text-slate-500 block text-[9px] uppercase">Net Income</span>
+                                <strong className="text-emerald-300 block mt-0.5">{f.netIncome}</strong>
+                              </div>
+                              <div>
+                                <span className="text-slate-500 block text-[9px] uppercase">R&D Spend</span>
+                                <strong className="text-indigo-300 block mt-0.5">{f.rdExpenses}</strong>
+                              </div>
+                            </div>
+                          </div>
+
+                          <a 
+                            href={f.url} 
+                            target="_blank" 
+                            rel="noreferrer"
+                            className="w-full text-center py-1.5 px-3 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition-all font-mono font-bold text-[9px] uppercase mt-2 block"
+                          >
+                            Browse Live SEC Edgar Profile ↗
+                          </a>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 2. FRED RENDERING */}
+                {activeApiTab === "fred" && (
+                  <div className="space-y-4">
+                    <div className="flex justify-between text-[11px] border-b border-slate-800 pb-2">
+                      <span className="text-slate-400 font-mono">Macro Parameter Pool: <strong className="text-slate-200">FEDERAL RESERVE ST. LOUIS</strong></span>
+                      <span className="text-teal-400 font-mono text-[10px]/none bg-teal-950/30 px-2 py-1 rounded">FRED LIVE SERVER</span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {Object.entries(apiResult.indicators || {}).map(([key, ind]: any) => (
+                        <div key={key} className="bg-slate-900 border border-slate-800 p-3.5 rounded-xl space-y-1">
+                          <span className="text-[9px] font-mono font-bold uppercase text-slate-500 block truncate">
+                            {ind.title} ({ind.seriesId || "Spread"})
+                          </span>
+                          <span className="text-xl font-bold font-mono tracking-tight text-yellow-500 block">
+                            {ind.currentValue}
+                          </span>
+                          <p className="text-[10px] text-slate-400 leading-snug mt-1 pt-1.5 border-t border-slate-850">
+                            {ind.trend}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Historical mini yield curve comparison list */}
+                    <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
+                      <h4 className="font-mono text-[10px]/none font-bold text-slate-300 uppercase tracking-wider mb-2.5">
+                        Yield Curve Spread History Trend (Inversion Levels)
+                      </h4>
+                      <div className="space-y-2">
+                        {apiResult.historicalChart?.map((item: any, idx: number) => (
+                          <div key={idx} className="flex items-center justify-between text-2xs font-mono border-b border-slate-850 pb-1.5 last:border-0 last:pb-0">
+                            <span className="text-slate-500">{item.date}</span>
+                            <div className="flex items-center gap-4">
+                              <span><strong className="text-slate-300">10Y Yield:</strong> {item.yield10y}%</span>
+                              <span><strong className="text-slate-300">2Y Yield:</strong> {item.yield2y}%</span>
+                              <span className={`px-1.5 rounded-sm font-bold ${item.spread < 0 ? "bg-rose-950 text-rose-350" : "bg-emerald-950 text-emerald-350"}`}>
+                                Spread: {item.spread}%
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 3. POLYGON RENDERING */}
+                {activeApiTab === "polygon" && (
+                  <div className="space-y-4">
+                    <div className="flex justify-between text-[11px] border-b border-slate-800 pb-2">
+                      <span className="text-slate-400 font-mono">Standardized Metrics Target: <strong className="text-slate-200">{apiResult.ticker}</strong></span>
+                      <span className="text-indigo-400 font-mono text-[10px]/none bg-indigo-950/30 px-2 py-1 rounded">{apiResult.source}</span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 font-mono">
+                      <div className="bg-slate-900 p-3.5 rounded-xl border border-slate-800">
+                        <span className="text-[9px] text-slate-500 uppercase font-bold block">Cash Dividend Amount</span>
+                        <strong className="text-lg text-emerald-300 mt-1 block">${apiResult.metrics?.dividendAmount || 0.0}</strong>
+                        <span className="text-[9px] text-slate-450 block mt-1.5">Ex-Date: {apiResult.metrics?.dividendExDate || "N/A"}</span>
+                      </div>
+
+                      <div className="bg-slate-900 p-3.5 rounded-xl border border-slate-800">
+                        <span className="text-[9px] text-slate-500 uppercase font-bold block">Stock Split Coefficient</span>
+                        <strong className="text-lg text-indigo-300 mt-1 block">{apiResult.metrics?.splitRatio || "N/A"}</strong>
+                        <span className="text-[9px] text-slate-450 block mt-1.5">Date: {apiResult.metrics?.splitDate || "N/A"}</span>
+                      </div>
+
+                      <div className="bg-slate-900 p-3.5 rounded-xl border border-slate-800">
+                        <span className="text-[9px] text-slate-500 uppercase font-bold block">R&D to Revenue Percentage</span>
+                        <strong className="text-lg text-yellow-500 mt-1 block">{apiResult.metrics?.rAndDToRevenuePercent || 0.0}%</strong>
+                        <span className="text-[9px] text-slate-450 block mt-1.5">Target: Semiconductor R&D Capex</span>
+                      </div>
+
+                      <div className="bg-slate-900 p-3.5 rounded-xl border border-slate-800">
+                        <span className="text-[9px] text-slate-500 uppercase font-bold block">Debt to Equity Ratio (Balance Sheet)</span>
+                        <strong className="text-lg text-rose-400 mt-1 block">{apiResult.metrics?.debtToEquityRatio || 0.0}x</strong>
+                        <span className="text-[9px] text-slate-450 block mt-1.5">Standard Leverage Risk Level</span>
+                      </div>
+                    </div>
+
+                    <div className="p-3 bg-slate-900 border border-slate-800 rounded-xl flex justify-between items-center text-xs">
+                      <span className="text-slate-400">Total annualized Free Cash Flow reserves SGD calculation:</span>
+                      <strong className="font-mono text-emerald-300">{apiResult.metrics?.freeCashFlowSgd || "$0 B"}</strong>
+                    </div>
+                  </div>
+                )}
+
+                {/* 4. CONGRESS RENDERING */}
+                {activeApiTab === "congress" && (
+                  <div className="space-y-4">
+                    <div className="flex justify-between text-[11px] border-b border-slate-800 pb-2">
+                      <span className="text-slate-400 font-mono">Politician Disclosures Filter: <strong className="text-slate-200">{apiResult.tickerRequested === "ALL" ? "All Watchlist" : apiResult.tickerRequested}</strong></span>
+                      <span className="text-amber-400 font-mono text-[10px]/none bg-amber-950/30 px-2 py-1 rounded">{apiResult.source}</span>
+                    </div>
+
+                    <div className="space-y-3">
+                      {apiResult.trades?.length === 0 ? (
+                        <div className="p-8 text-center text-slate-500 bg-slate-900 border border-slate-850 rounded-xl font-mono text-2xs">
+                          No recent Congressional trades registered for this equity symbol. Click TSM or NVDA to view specific disclosures.
+                        </div>
+                      ) : (
+                        apiResult.trades?.map((tr: any, idx: number) => (
+                          <div key={idx} className="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-2">
+                            <div className="flex flex-wrap items-center justify-between text-2xs gap-2">
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold text-slate-200">{tr.politician}</span>
+                                <span className="text-slate-500 font-mono">({tr.chamber})</span>
+                              </div>
+                              <span className={`px-2 py-0.5 font-bold font-mono text-[9px] rounded-sm uppercase ${
+                                tr.transaction.includes("PURCHASE") ? "bg-emerald-950/40 text-emerald-350 border border-emerald-900/60" : "bg-rose-950/40 text-rose-350 border border-rose-900/60"
+                              }`}>
+                                {tr.transaction}
+                              </span>
+                            </div>
+
+                            <p className="text-[11.5px] text-slate-300 leading-relaxed font-sans">{tr.highlights}</p>
+
+                            <div className="flex items-center justify-between text-[10px] font-mono text-slate-500 pt-2 border-t border-slate-850">
+                              <span>Asset Class: <strong className="text-slate-300">{tr.ticker}</strong></span>
+                              <span>Trade Valuation: <strong className="text-slate-300">{tr.amountRange}</strong></span>
+                              <span>Disclosed Date: <strong className="text-slate-300">{tr.disclosureDate}</strong></span>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Raw JSON stream toggle */}
+                <details className="group border border-slate-800 rounded-xl overflow-hidden font-mono text-2xs">
+                  <summary className="bg-slate-900 px-4 py-2 text-slate-400 font-semibold cursor-pointer hover:bg-slate-850 select-none flex justify-between items-center">
+                    <span>⚡ VIEW RAW REAL-TIME STREAM PAYLOAD</span>
+                    <span className="text-slate-600 group-open:rotate-90 transition-all font-sans text-xs">▶</span>
+                  </summary>
+                  <pre className="p-4 bg-black text-slate-350 leading-relaxed overflow-x-auto text-[10px] select-all">
+                    {JSON.stringify(apiResult, null, 2)}
+                  </pre>
+                </details>
+
+              </div>
+            ) : (
+              <div className="flex items-center justify-center py-12 text-slate-500 font-mono text-xs">
+                Pending telemetry sync...
+              </div>
+            )}
+          </div>
+
+        </div>
+
+      </div>
+
     </div>
   );
 }

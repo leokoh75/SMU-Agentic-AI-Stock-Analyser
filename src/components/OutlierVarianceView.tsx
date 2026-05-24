@@ -1037,11 +1037,11 @@ export function OutlierVarianceView({ stocks }: OutlierVarianceViewProps) {
               <div className="grid grid-cols-2 gap-3 text-3xs font-mono">
                 <div>
                   <span className="text-gray-400 block uppercase">BUY LIMIT TARGET</span>
-                  <p className="text-sm font-black text-emerald-400 font-mono mt-0.5">${techMetrics.buyLowThreshold}</p>
+                  <p className="text-sm font-black text-emerald-300 font-mono mt-0.5">${techMetrics.buyLowThreshold}</p>
                 </div>
                 <div>
                   <span className="text-gray-400 block uppercase">SELL SCALE TARGET</span>
-                  <p className="text-sm font-black text-rose-400 font-mono mt-0.5">${techMetrics.sellHighThreshold}</p>
+                  <p className="text-sm font-black text-rose-450 font-mono mt-0.5">${techMetrics.sellHighThreshold}</p>
                 </div>
               </div>
 
@@ -1068,11 +1068,11 @@ export function OutlierVarianceView({ stocks }: OutlierVarianceViewProps) {
               <div className="grid grid-cols-2 gap-3 text-3xs font-mono">
                 <div>
                   <span className="text-gray-400 block uppercase">BUY LIMIT TARGET</span>
-                  <p className="text-sm font-black text-emerald-400 font-mono mt-0.5">${companionMetrics.buyLowThreshold}</p>
+                  <p className="text-sm font-black text-emerald-300 font-mono mt-0.5">${companionMetrics.buyLowThreshold}</p>
                 </div>
                 <div>
                   <span className="text-gray-400 block uppercase">SELL SCALE TARGET</span>
-                  <p className="text-sm font-black text-rose-400 font-mono mt-0.5">${companionMetrics.sellHighThreshold}</p>
+                  <p className="text-sm font-black text-rose-450 font-mono mt-0.5">${companionMetrics.sellHighThreshold}</p>
                 </div>
               </div>
 

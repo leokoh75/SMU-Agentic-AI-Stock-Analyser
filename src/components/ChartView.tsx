@@ -579,7 +579,7 @@ export function ChartView({ stocks, selectedTicker }: ChartViewProps) {
                     return (
                       <div key={stock.ticker} className="p-2 bg-slate-850 rounded-lg text-3xs space-y-0.5">
                         <span className="font-mono font-bold text-slate-300">{stock.ticker}</span>
-                        <p className="font-mono text-xs font-semibold text-emerald-400">${currentPt?.price}</p>
+                        <p className="font-mono text-xs font-semibold text-emerald-300">${currentPt?.price}</p>
                         {chartMode === "normalized" && (
                           <p className="text-4xs text-slate-500 font-mono text-slate-400">Index: {Math.round((currentPt?.price / basePrice) * 100)}%</p>
                         )}

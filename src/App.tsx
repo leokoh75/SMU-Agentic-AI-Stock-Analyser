@@ -1192,6 +1192,49 @@ export default function App() {
                     <strong>Why it matters:</strong> Positive correlation means they rise and fall together (e.g. semiconductor foundries and AI chip designers). Low or negative correlation helps you diversify your portfolio so that all of your holdings don't drop at the same time.
                   </p>
                 </div>
+
+                <div className="space-y-1 pt-4">
+                  <h4 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 block flex-shrink-0" />
+                    Weighted Average Cost (WAC)
+                    <span className="text-[9px] font-mono font-bold text-indigo-500 uppercase bg-indigo-50 px-1.5 py-0.5 rounded ml-auto">Avg Purchase Price</span>
+                  </h4>
+                  <p className="text-3xs text-gray-600 leading-relaxed">
+                    <strong>What it is:</strong> The average price you paid to buy each share of a stock that you currently own, adjusting for different buy sizes over time.
+                    <br />
+                    <strong>Formula:</strong> <code>Total Cash Paid to Buy / Total Shares Owned Today</code>.
+                    <br />
+                    <strong>Why it matters:</strong> This is your break-even line. If the live stock price is above your average purchase price, your position is in a profit.
+                  </p>
+                </div>
+
+                <div className="space-y-1 pt-4">
+                  <h4 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 block flex-shrink-0" />
+                    Unrealized Gain / Loss (Paper Profit)
+                    <span className="text-[9px] font-mono font-bold text-emerald-600 uppercase bg-emerald-50 px-1.5 py-0.5 rounded ml-auto">Paper P&amp;L</span>
+                  </h4>
+                  <p className="text-3xs text-gray-600 leading-relaxed">
+                    <strong>What it is:</strong> The theoretical profit or loss you would make if you sold all of your current shares of a stock at today's live market price.
+                    <br />
+                    <strong>Formula:</strong> <code>Current Market Value of Shares - Total Cost of buying them</code>.
+                    <br />
+                    <strong>Why it matters:</strong> It changes minute-by-minute as the stock price fluctuates. It is called "unrealized" because you haven't locked it in yet.
+                  </p>
+                </div>
+
+                <div className="space-y-1 pt-4">
+                  <h4 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 block flex-shrink-0" />
+                    Realized Gain / Loss (Locked Profit)
+                    <span className="text-[9px] font-mono font-bold text-purple-600 uppercase bg-purple-50 px-1.5 py-0.5 rounded ml-auto">Realized P&amp;L</span>
+                  </h4>
+                  <p className="text-3xs text-gray-600 leading-relaxed">
+                    <strong>What it is:</strong> The historical hard profit or loss that you have permanently locked-in by selling some of your shares.
+                    <br />
+                    <strong>Why it matters:</strong> Unlike paper profits, realized profits cannot change and are finalized cash balances recorded in your transaction ledger.
+                  </p>
+                </div>
               </div>
 
               {/* Right Column: Disqus Live Comments Widget */}
