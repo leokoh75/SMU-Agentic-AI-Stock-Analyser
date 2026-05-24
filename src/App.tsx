@@ -913,13 +913,13 @@ export default function App() {
       </main>
 
       {/* iOS styled Bottom Tab Bar for Mobile (iPhone viewports) */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-[80] bg-white/85 backdrop-blur-md border-t border-gray-150 pb-5 pt-1.5 shadow-[0_-5px_15px_rgba(0,0,0,0.06)]">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-[80] bg-white/85 dark:bg-slate-900/85 backdrop-blur-md border-t border-gray-150 dark:border-slate-800 pb-5 pt-1.5 shadow-[0_-5px_15px_rgba(0,0,0,0.06)] dark:shadow-[0_-5px_15px_rgba(0,0,0,0.3)]">
         <div className="flex items-center justify-around h-12 px-2">
           {/* Dashboard Tab */}
           <button
             onClick={() => { setActiveTab("dashboard"); setShowMoreMenu(false); }}
             className={`flex flex-col items-center justify-center flex-1 h-full cursor-pointer transition-colors ${
-              activeTab === "dashboard" ? "text-indigo-600 font-extrabold" : "text-gray-400 font-medium"
+              activeTab === "dashboard" ? "text-indigo-600 dark:text-indigo-400 font-extrabold" : "text-gray-400 dark:text-slate-400 font-medium"
             }`}
           >
             <BarChart4 className="w-5 h-5 mb-0.5" />
@@ -930,7 +930,7 @@ export default function App() {
           <button
             onClick={() => { setActiveTab("recommendations"); setShowMoreMenu(false); }}
             className={`flex flex-col items-center justify-center flex-1 h-full cursor-pointer transition-colors ${
-              activeTab === "recommendations" ? "text-indigo-600 font-extrabold" : "text-gray-400 font-medium"
+              activeTab === "recommendations" ? "text-indigo-600 dark:text-indigo-400 font-extrabold" : "text-gray-400 dark:text-slate-400 font-medium"
             }`}
           >
             <Zap className="w-5 h-5 mb-0.5" />
@@ -941,7 +941,7 @@ export default function App() {
           <button
             onClick={() => { setActiveTab("scorecard"); setShowMoreMenu(false); }}
             className={`flex flex-col items-center justify-center flex-1 h-full cursor-pointer transition-colors ${
-              activeTab === "scorecard" ? "text-indigo-600 font-extrabold" : "text-gray-400 font-medium"
+              activeTab === "scorecard" ? "text-indigo-600 dark:text-indigo-400 font-extrabold" : "text-gray-400 dark:text-slate-400 font-medium"
             }`}
           >
             <Sliders className="w-5 h-5 mb-0.5" />
@@ -952,7 +952,7 @@ export default function App() {
           <button
             onClick={() => { setActiveTab("portfolio"); setShowMoreMenu(false); }}
             className={`flex flex-col items-center justify-center flex-1 h-full cursor-pointer transition-colors ${
-              activeTab === "portfolio" ? "text-indigo-600 font-extrabold" : "text-gray-400 font-medium"
+              activeTab === "portfolio" ? "text-indigo-600 dark:text-indigo-400 font-extrabold" : "text-gray-400 dark:text-slate-400 font-medium"
             }`}
           >
             <Briefcase className="w-5 h-5 mb-0.5" />
@@ -963,7 +963,7 @@ export default function App() {
           <button
             onClick={() => setShowMoreMenu(prev => !prev)}
             className={`flex flex-col items-center justify-center flex-1 h-full cursor-pointer transition-colors ${
-              showMoreMenu ? "text-indigo-600 font-extrabold" : "text-gray-400 font-medium"
+              showMoreMenu ? "text-indigo-600 dark:text-indigo-400 font-extrabold" : "text-gray-400 dark:text-slate-400 font-medium"
             }`}
           >
             <MoreHorizontal className="w-5 h-5 mb-0.5" />
@@ -976,14 +976,14 @@ export default function App() {
       {showMoreMenu && (
         <div className="fixed inset-0 z-[75] bg-black/40 backdrop-blur-xs md:hidden animate-fade-in" onClick={() => setShowMoreMenu(false)}>
           <div 
-            className="absolute bottom-20 left-4 right-4 bg-white rounded-2xl border border-gray-150 shadow-2xl p-5 space-y-4 animate-slide-up"
+            className="absolute bottom-20 left-4 right-4 bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-slate-800 shadow-2xl p-5 space-y-4 animate-slide-up"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex justify-between items-center border-b border-gray-100 pb-2.5">
+            <div className="flex justify-between items-center border-b border-gray-100 dark:border-slate-800 pb-2.5">
               <h3 className="font-bold text-xs uppercase text-slate-400 tracking-wider font-mono">Auxiliary Trading Tools</h3>
               <button 
                 onClick={() => setShowMoreMenu(false)}
-                className="text-4xs font-bold text-indigo-600 uppercase tracking-widest px-2 py-1 bg-indigo-50 rounded-lg"
+                className="text-4xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest px-2 py-1 bg-indigo-50 dark:bg-indigo-950/60 rounded-lg"
               >
                 Done
               </button>
@@ -993,7 +993,7 @@ export default function App() {
               <button
                 onClick={() => { setActiveTab("scanner"); setShowMoreMenu(false); }}
                 className={`py-3 px-3 rounded-xl border flex flex-col items-center justify-center gap-1 text-center transition-all cursor-pointer ${
-                  activeTab === "scanner" ? "bg-indigo-600 text-white border-indigo-600" : "bg-slate-50 border-gray-150 text-slate-700 hover:bg-slate-100"
+                  activeTab === "scanner" ? "bg-indigo-600 text-white border-indigo-600" : "bg-slate-50 dark:bg-slate-850 border-gray-150 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
                 }`}
               >
                 <Search className="w-4 h-4" />
@@ -1003,7 +1003,7 @@ export default function App() {
               <button
                 onClick={() => { setActiveTab("watchlist"); setShowMoreMenu(false); }}
                 className={`py-3 px-3 rounded-xl border flex flex-col items-center justify-center gap-1 text-center transition-all cursor-pointer ${
-                  activeTab === "watchlist" ? "bg-indigo-600 text-white border-indigo-600" : "bg-slate-50 border-gray-150 text-slate-700 hover:bg-slate-100"
+                  activeTab === "watchlist" ? "bg-indigo-600 text-white border-indigo-600" : "bg-slate-50 dark:bg-slate-850 border-gray-150 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
                 }`}
               >
                 <FolderPlus className="w-4 h-4" />
@@ -1013,7 +1013,7 @@ export default function App() {
               <button
                 onClick={() => { setActiveTab("decision"); setShowMoreMenu(false); }}
                 className={`py-3 px-3 rounded-xl border flex flex-col items-center justify-center gap-1 text-center transition-all cursor-pointer ${
-                  activeTab === "decision" ? "bg-indigo-600 text-white border-indigo-600" : "bg-slate-50 border-gray-150 text-slate-700 hover:bg-slate-100"
+                  activeTab === "decision" ? "bg-indigo-600 text-white border-indigo-600" : "bg-slate-50 dark:bg-slate-850 border-gray-150 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
                 }`}
               >
                 <ArrowRightLeft className="w-4 h-4" />
@@ -1023,17 +1023,17 @@ export default function App() {
               <button
                 onClick={() => { setActiveTab("chart"); setShowMoreMenu(false); }}
                 className={`py-3 px-3 rounded-xl border flex flex-col items-center justify-center gap-1 text-center transition-all cursor-pointer ${
-                  activeTab === "chart" ? "bg-indigo-600 text-white border-indigo-600" : "bg-slate-50 border-gray-150 text-slate-700 hover:bg-slate-100"
+                  activeTab === "chart" ? "bg-indigo-600 text-white border-indigo-600" : "bg-slate-50 dark:bg-slate-850 border-gray-150 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
                 }`}
               >
-                <LineChart className="w-4 h-4" />
+                <LineChart className="w-4 h-4 animate-pulse" />
                 <span className="text-4xs font-bold uppercase tracking-wider block">Performance</span>
               </button>
 
               <button
                 onClick={() => { setActiveTab("thesis"); setShowMoreMenu(false); }}
                 className={`py-3 px-3 rounded-xl border flex flex-col items-center justify-center gap-1 text-center transition-all cursor-pointer ${
-                  activeTab === "thesis" ? "bg-indigo-600 text-white border-indigo-600" : "bg-slate-50 border-gray-150 text-slate-700 hover:bg-slate-100"
+                  activeTab === "thesis" ? "bg-indigo-600 text-white border-indigo-600" : "bg-slate-50 dark:bg-slate-850 border-gray-150 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
                 }`}
               >
                 <FileText className="w-4 h-4" />
@@ -1043,7 +1043,7 @@ export default function App() {
               <button
                 onClick={() => { setActiveTab("alerts"); setShowMoreMenu(false); }}
                 className={`py-3 px-3 rounded-xl border flex flex-col items-center justify-center gap-1 text-center transition-all cursor-pointer ${
-                  activeTab === "alerts" ? "bg-indigo-600 text-white border-indigo-600" : "bg-slate-50 border-gray-150 text-slate-700 hover:bg-slate-100"
+                  activeTab === "alerts" ? "bg-indigo-600 text-white border-indigo-600" : "bg-slate-50 dark:bg-slate-850 border-gray-150 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
                 }`}
               >
                 <Bell className="w-4 h-4" />
@@ -1055,7 +1055,7 @@ export default function App() {
       )}
 
       {/* Branded Status Footer */}
-      <footer className="bg-white border-t border-gray-100 py-4 px-6 mt-8 mb-20 md:mb-0 text-center text-4xs font-mono font-bold tracking-wider text-gray-400 uppercase select-none">
+      <footer className="bg-white dark:bg-slate-900 border-t border-gray-100 dark:border-slate-800 py-4 px-6 mt-8 mb-20 md:mb-0 text-center text-4xs font-mono font-bold tracking-wider text-gray-400 dark:text-slate-500 uppercase select-none">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-2">
           <div className="flex items-center gap-1">
             <Fingerprint className="w-3.5 h-3.5 text-indigo-500" />
@@ -1068,10 +1068,10 @@ export default function App() {
       {/* GLOBAL BEGINNER GLOSSARY MODAL WITH DISQUS INTEGRATION */}
       {showGlossary && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-white rounded-2xl max-w-6xl w-full max-h-[90vh] border border-gray-150 shadow-2xl flex flex-col overflow-hidden">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-6xl w-full max-h-[90vh] border border-gray-150 dark:border-slate-800 shadow-2xl flex flex-col overflow-hidden text-slate-900 dark:text-slate-100">
             
             {/* Modal Header */}
-            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-indigo-950 text-white shrink-0">
+            <div className="p-6 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center bg-indigo-950 text-white shrink-0">
               <div className="flex items-center gap-2">
                 <BookOpen className="w-5 h-5 text-teal-400 font-bold" />
                 <div>
@@ -1088,10 +1088,10 @@ export default function App() {
             </div>
 
             {/* Modal Body / Split screen columns */}
-            <div className="flex-1 overflow-y-auto grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-gray-150">
+            <div className="flex-1 overflow-y-auto grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-gray-150 dark:divide-slate-800">
               
               {/* Left Column: Beginner Investment Glossary */}
-              <div className="p-6 space-y-5 font-sans divide-y divide-gray-100 overflow-y-auto max-h-[45vh] md:max-h-full">
+              <div className="p-6 space-y-5 font-sans divide-y divide-gray-100 dark:divide-slate-800 text-slate-800 dark:text-slate-100 overflow-y-auto max-h-[45vh] md:max-h-full">
                 <h4 className="text-3xs uppercase font-extrabold tracking-wider text-slate-400 font-mono pb-2">
                   Part 1: Trading Calculations & Concept Help
                 </h4>
@@ -1238,16 +1238,16 @@ export default function App() {
               </div>
 
               {/* Right Column: Disqus Live Comments Widget */}
-              <div className="p-6 bg-slate-50 overflow-y-auto max-h-[45vh] md:max-h-full flex flex-col justify-start">
-                <div className="flex items-center gap-2 border-b border-gray-200 pb-3 mb-4 shrink-0">
-                  <MessageSquare className="w-5 h-5 text-indigo-600" />
+              <div className="p-6 bg-slate-50 dark:bg-slate-950 overflow-y-auto max-h-[45vh] md:max-h-full flex flex-col justify-start">
+                <div className="flex items-center gap-2 border-b border-gray-200 dark:border-slate-800 pb-3 mb-4 shrink-0">
+                  <MessageSquare className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                   <div>
-                    <h4 className="text-xs font-bold text-slate-950 font-sans">Part 2: Community Discussion Feed</h4>
-                    <p className="text-4xs text-slate-400 font-sans">Disqus widget • English (Singapore) en_SG preset enabled</p>
+                    <h4 className="text-xs font-bold text-slate-950 dark:text-slate-100 font-sans">Part 2: Community Discussion Feed</h4>
+                    <p className="text-4xs text-slate-400 dark:text-slate-500 font-sans">Disqus widget • English (Singapore) en_SG preset enabled</p>
                   </div>
                 </div>
 
-                <div className="bg-white p-4 rounded-xl border border-gray-150 shadow-xs flex-1 min-h-[300px]">
+                <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-gray-150 dark:border-slate-800 shadow-xs flex-1 min-h-[300px]">
                   <DiscussionEmbed
                     shortname="smu-agentic-ai-stock-analyse"
                     config={{
@@ -1263,7 +1263,7 @@ export default function App() {
             </div>
 
             {/* Modal Footer */}
-            <div className="p-4 bg-gray-50 border-t border-gray-150 rounded-b-2xl text-center shrink-0">
+            <div className="p-4 bg-gray-50 dark:bg-slate-950 border-t border-gray-150 dark:border-slate-800 rounded-b-2xl text-center shrink-0">
               <button 
                 onClick={() => setShowGlossary(false)}
                 className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-3xs font-mono uppercase tracking-wider font-bold shadow cursor-pointer transition-all"
@@ -1279,10 +1279,10 @@ export default function App() {
       {/* DISQUS DISCUSSIONS OVERLAY SECTION */}
       {showDiscussion && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] border border-gray-150 shadow-2xl flex flex-col overflow-hidden">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-4xl w-full max-h-[90vh] border border-gray-150 dark:border-slate-800 shadow-2xl flex flex-col overflow-hidden">
             
             {/* Modal Header */}
-            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-indigo-950 text-white shrink-0">
+            <div className="p-6 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center bg-indigo-950 text-white shrink-0">
               <div className="flex items-center gap-2">
                 <MessageSquare className="w-5 h-5 text-teal-400 font-bold" />
                 <div>
@@ -1299,8 +1299,8 @@ export default function App() {
             </div>
 
             {/* Modal Body / Comments Section */}
-            <div className="flex-1 overflow-y-auto p-6 bg-slate-50">
-              <div className="bg-white p-6 md:p-8 rounded-2xl border border-gray-150 shadow-xs">
+            <div className="flex-1 overflow-y-auto p-6 bg-slate-50 dark:bg-slate-950">
+              <div className="bg-white dark:bg-slate-900 p-6 md:p-8 rounded-2xl border border-gray-150 dark:border-slate-800 shadow-xs">
                 <DiscussionEmbed
                   shortname='smu-agentic-ai-stock-analyse'
                   config={
@@ -1316,7 +1316,7 @@ export default function App() {
             </div>
 
             {/* Modal Footer */}
-            <div className="p-4 bg-gray-50 border-t border-gray-150 rounded-b-2xl text-center shrink-0">
+            <div className="p-4 bg-gray-50 dark:bg-slate-950 border-t border-gray-150 dark:border-slate-800 rounded-b-2xl text-center shrink-0">
               <button 
                 onClick={() => setShowDiscussion(false)}
                 className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-3xs font-mono uppercase tracking-wider font-bold shadow cursor-pointer transition-all"
