@@ -234,7 +234,7 @@ export function WatchlistUploadView({ stocks, onAddStock, onRemoveStock, onResto
           className="px-4 py-2 text-xs border border-gray-100 font-semibold rounded-xl bg-slate-50 hover:bg-slate-100 text-gray-700 flex items-center gap-1.5 transition-colors cursor-pointer"
         >
           <RotateCcw className="w-4 h-4 text-gray-500" />
-          Restore Default 10 Stocks
+          Restore Default Focus Stocks (5 per Category)
         </button>
       </div>
 

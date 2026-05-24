@@ -37,11 +37,60 @@ import {
   Moon
 } from "lucide-react";
 
+// Helper to determine minutes corresponding to standard refresh keys
+const getRefreshMinutes = (rate: string): number => {
+  switch (rate) {
+    case "15min": return 15;
+    case "30min": return 30;
+    case "1hr": return 60;
+    case "6hr": return 360;
+    case "12hr": return 720;
+    case "24hr": return 1440;
+    default: return 15;
+  }
+};
+
 export default function App() {
   const [activeTab, setActiveTab] = useState<string>("dashboard");
   const [showGlossary, setShowGlossary] = useState<boolean>(false);
   const [showDiscussion, setShowDiscussion] = useState<boolean>(false);
   const [showMoreMenu, setShowMoreMenu] = useState<boolean>(false);
+
+  // User-configurable refresh rate of all data points
+  const [refreshRate, setRefreshRate] = useState<string>(() => {
+    try {
+      return localStorage.getItem("equilibrium_refresh_rate") || "15min";
+    } catch {
+      return "15min";
+    }
+  });
+
+  const [secondsUntilRefresh, setSecondsUntilRefresh] = useState<number>(() => {
+    return getRefreshMinutes(localStorage.getItem("equilibrium_refresh_rate") || "15min") * 60;
+  });
+
+  // Helper to format countdown seconds nicely
+  const formatCountdown = (secs: number): string => {
+    if (secs >= 365) {
+      if (secs >= 3600) {
+        const h = Math.floor(secs / 3600);
+        const m = Math.floor((secs % 3600) / 60);
+        return `${h}h ${m}m ${secs % 60}s`;
+      }
+    }
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${m}:${s < 10 ? "0" : ""}${s}`;
+  };
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("equilibrium_refresh_rate", refreshRate);
+    } catch (e) {
+      console.warn("Refresh rate storage blocked:", e);
+    }
+    setSecondsUntilRefresh(getRefreshMinutes(refreshRate) * 60);
+  }, [refreshRate]);
 
   const [darkMode, setDarkMode] = useState<boolean>(() => {
     try {
@@ -153,6 +202,21 @@ export default function App() {
         if (stock) {
           activeStocks.push(stock);
         }
+      }
+
+      // Check if any default stocks are missing from stockMap completely (never in database)
+      const missingDefaults = defaultStocks.filter(ds => !stockMap.has(ds.ticker));
+      if (missingDefaults.length > 0) {
+        console.log(`Discovered ${missingDefaults.length} missing default stocks. Merging and seeding...`);
+        const seedRows = missingDefaults.map((stock) => ({
+          text: JSON.stringify(stock),
+          author: stock.ticker,
+        }));
+        const { error: seedError } = await supabase.from("entries").insert(seedRows);
+        if (seedError) {
+          console.error("Failed to seed missing defaults:", seedError);
+        }
+        activeStocks.push(...missingDefaults);
       }
 
       if (activeStocks.length === 0) {
@@ -408,18 +472,6 @@ export default function App() {
     loadStocksFromSupabase();
     loadLiveNews();
 
-    // Set up a recurring interval to fetch news every 15 minutes (15 * 60 * 1000 ms)
-    const newsInterval = setInterval(() => {
-      loadLiveNews();
-    }, 15 * 60 * 1000);
-
-    // Set up a recurring background check to sync Yahoo Finance prices and trigger alerts
-    const priceInterval = setInterval(() => {
-      if (stocksRef.current && stocksRef.current.length > 0) {
-        silentSyncPrices(stocksRef.current);
-      }
-    }, 5 * 60 * 1000); // Evaluates alerts and updates stocks every 5 minutes
-
     // Setup active real-time channel synchronizing updates across clients
     const channel = supabase
       .channel("entries_realtime_changes")
@@ -458,11 +510,36 @@ export default function App() {
       .subscribe();
 
     return () => {
-      clearInterval(newsInterval);
-      clearInterval(priceInterval);
       supabase.removeChannel(channel);
     };
   }, []);
+
+  // Central timer clock ticking every 1 sec to count down and trigger silent refresh of prices and news
+  useEffect(() => {
+    const rateMinutes = getRefreshMinutes(refreshRate);
+    setSecondsUntilRefresh(rateMinutes * 60);
+
+    const secondsClock = setInterval(() => {
+      setSecondsUntilRefresh((prev) => {
+        if (prev <= 1) {
+          console.log(`Timer elapsed for refresh rate ${refreshRate}. Refreshing all live datapoint feeds...`);
+          
+          // Trigger dual background syncs non-blockingly
+          loadLiveNews();
+          if (stocksRef.current && stocksRef.current.length > 0) {
+            silentSyncPrices(stocksRef.current);
+          }
+          
+          return rateMinutes * 60; // Reset countdown
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => {
+      clearInterval(secondsClock);
+    };
+  }, [refreshRate]);
 
   const handleAddStock = async (newStock: Stock) => {
     // Avoid local duplicates before requesting network insert
@@ -739,6 +816,39 @@ export default function App() {
         </div>
       </header>
 
+      {/* Real-time Data Freshness & Custom Refresh Rate Control HUD */}
+      <section id="refresh-hud" className="bg-slate-900 border-b border-slate-800 px-4 md:px-6 py-2.5 text-slate-400 text-3xs font-mono tracking-wide flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 select-none shrink-0">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse shrink-0"></span>
+          <span className="font-extrabold uppercase text-emerald-400">Data-Grid Active</span>
+          <span className="text-slate-700">|</span>
+          <span className="text-slate-400">Next Automatic Live Sync in:</span>
+          <span className="px-2 py-0.5 bg-indigo-950/80 border border-indigo-800 text-indigo-300 rounded font-bold">{formatCountdown(secondsUntilRefresh)}</span>
+          {isSyncingPrices && (
+            <span className="text-emerald-400 animate-pulse text-[10px] ml-1 flex items-center gap-1">
+              <TrendingUp className="w-3 h-3 animate-spin" /> syncing...
+            </span>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2 font-sans text-3xs">
+          <label htmlFor="refresh-rate" className="text-slate-400 font-mono font-bold">Refresh Rate Period:</label>
+          <select
+            id="refresh-rate"
+            value={refreshRate}
+            onChange={(e) => setRefreshRate(e.target.value)}
+            className="p-1 px-1.5 border border-slate-700 rounded-md bg-slate-850 text-slate-200 font-bold font-mono focus:outline-hidden"
+          >
+            <option value="15min">15 Minutes</option>
+            <option value="30min">30 Minutes</option>
+            <option value="1hr">1 Hour</option>
+            <option value="6hr">6 Hours</option>
+            <option value="12hr">12 Hours</option>
+            <option value="24hr">24 Hours</option>
+          </select>
+        </div>
+      </section>
+
       {/* Primary viewport content - Balanced spacing with safe margins preventing bottom dock coverage */}
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 md:px-6 py-6 pb-24 md:pb-8">
         {activeTab === "dashboard" && (
@@ -983,42 +1093,47 @@ export default function App() {
               {/* Left Column: Beginner Investment Glossary */}
               <div className="p-6 space-y-5 font-sans divide-y divide-gray-100 overflow-y-auto max-h-[45vh] md:max-h-full">
                 <h4 className="text-3xs uppercase font-extrabold tracking-wider text-slate-400 font-mono pb-2">
-                  Part 1: Trading Concept Help
+                  Part 1: Trading Calculations & Concept Help
                 </h4>
 
                 <div className="space-y-1 pt-3">
                   <h4 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 block flex-shrink-0" />
-                    Stock Connection / Correlation 
-                    <span className="text-[9px] font-mono font-bold text-indigo-500 uppercase bg-indigo-50 px-1.5 py-0.5 rounded ml-auto">r Value</span>
+                    Normal Average (YTD Timeline)
+                    <span className="text-[9px] font-mono font-bold text-indigo-505 uppercase bg-indigo-50 px-1.5 py-0.5 rounded ml-auto">Normal Avg (YTD)</span>
                   </h4>
                   <p className="text-3xs text-gray-600 leading-relaxed">
-                    <strong>What it means:</strong> A "friendship score" that shows if two stocks dance to the exact same tune. 
-                    If Stock A goes up and Stock B always climbs right along with it, they have a strong positive correlation (+1 is a perfect match!). Zero means they are totally independent.
+                    <strong>What it is:</strong> The typical average price of the stock calculated using Year-To-Date (YTD) data—meaning from January 1st of the current year (2026) up to today. 
+                    <br />
+                    <strong>Why it matters:</strong> It acts as a realistic baseline. By looking at the normal average price since the year started, you can immediately tell if today's price is unusually cheap or expensive compared to its recent normal path.
                   </p>
                 </div>
 
                 <div className="space-y-1 pt-4">
                   <h4 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 block flex-shrink-0" />
-                    Stock Price Outliers
-                    <span className="text-[9px] font-mono font-bold text-teal-600 uppercase bg-teal-50 px-1.5 py-0.5 rounded ml-auto">Outlier</span>
+                    Asymmetry Score
+                    <span className="text-[9px] font-mono font-bold text-teal-600 uppercase bg-teal-50 px-1.5 py-0.5 rounded ml-auto">Factor Score</span>
                   </h4>
                   <p className="text-3xs text-gray-600 leading-relaxed">
-                    <strong>What it means:</strong> Think of a stock's price like a rubber band centered around its historical average. 
-                    When the price gets stretched way too high or too low, we call it an "outlier". Low outliers are heavily discounted and often make amazing buying opportunities!
+                    <strong>What it is:</strong> A risk-reward score from 1.0 to 10.0 that measures how much money you could gain relative to what you might lose.
+                    <br />
+                    <strong>Formula (simplified):</strong> <code>(Upside Potenz + Conviction + upcoming catalysts) / (Downside vulnerability + bankruptcy risk)</code>. 
+                    <br />
+                    <strong>Why it matters:</strong> A high score means a great asymmetric trade. This ensures you only invest when the potential reward is far bigger than the possible loss.
                   </p>
                 </div>
 
                 <div className="space-y-1 pt-4">
                   <h4 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 block flex-shrink-0" />
-                    Normal Boundaries / Standard Deviation
+                    Normal Boundaries / Volatility Range
                     <span className="text-[9px] font-mono font-bold text-indigo-500 uppercase bg-indigo-50 px-1.5 py-0.5 rounded ml-auto">Sigma &sigma;</span>
                   </h4>
                   <p className="text-3xs text-gray-600 leading-relaxed">
-                    <strong>What it means:</strong> The standard boundary limits within which a stock's price normally trades. 
-                    Crossing these boundaries is unusual and signals that a stock is either historically cheap (buying opportunity) or overheated (selling opportunity).
+                    <strong>What it is:</strong> A measure of price variation (standard deviation), defining the standard price swings the stock experiences. 
+                    <br />
+                    <strong>Why it matters:</strong> If a stock has high volatility, its normal boundaries are wider. Knowing these boundaries helps you filter out random price noise and identify real, major trend deviations.
                   </p>
                 </div>
 
@@ -1029,43 +1144,52 @@ export default function App() {
                     <span className="text-[9px] font-mono font-bold text-indigo-500 uppercase bg-indigo-50 px-1.5 py-0.5 rounded ml-auto">Z-Score</span>
                   </h4>
                   <p className="text-3xs text-gray-600 leading-relaxed">
-                    <strong>What it means:</strong> A helper count showing just how far todays price has wandered away from its historical average. 
-                    A score of +1.5 means the price is unusually expensive, while -1.5 means the price is unusually cheap and highly discounted.
+                    <strong>What it is:</strong> A simple number that tells you how many steps (standard deviations) today's price is away from its YTD normal average.
+                    <br />
+                    <strong>Why it matters:</strong> A score of 0 is exactly normal. A score below <strong>-1.5</strong> means the price has nose-dived into extremely rare, cheap bargain territory. A score above <strong>+1.5</strong> means the stock is historically overheated and expensive.
                   </p>
                 </div>
 
                 <div className="space-y-1 pt-4">
                   <h4 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 block flex-shrink-0" />
-                    Shared Trend Fit
-                    <span className="text-[9px] font-mono font-bold text-indigo-500 uppercase bg-indigo-50 px-1.5 py-0.5 rounded ml-auto">R-Squared R²</span>
+                    Safe Buy Price (Buy Low Threshold)
+                    <span className="text-[9px] font-mono font-bold text-emerald-600 uppercase bg-emerald-50 px-1.5 py-0.5 rounded ml-auto">Safe Entry</span>
                   </h4>
                   <p className="text-3xs text-gray-600 leading-relaxed">
-                    <strong>What it means:</strong> Explains what percentage of the companion stock's prices are directly tied to or driven by the main tech stock. 
-                    For example, an R² of 85% means that 85% of the helper stock's changes happen because of trends in the main stock!
+                    <strong>What it is:</strong> A conservative bargain entry line representing the price at which the stock becomes statistically hand-selected.
+                    <br />
+                    <strong>Formula:</strong> <code>YTD Normal Average * (1 - 1.5 * Volatility Rate)</code>.
+                    <br />
+                    <strong>Why it matters:</strong> If a stock's live price drops below this safe buy price, it signals a strong buying opportunity with excellent downside mitigation.
                   </p>
                 </div>
 
                 <div className="space-y-1 pt-4">
                   <h4 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 block flex-shrink-0" />
-                    Amplification Multiplier
-                    <span className="text-[9px] font-mono font-bold text-indigo-500 uppercase bg-indigo-50 px-1.5 py-0.5 rounded ml-auto">Beta &beta;</span>
+                    Target Sell Price
+                    <span className="text-[9px] font-mono font-bold text-rose-600 uppercase bg-rose-50 px-1.5 py-0.5 rounded ml-auto">Target Exit</span>
                   </h4>
                   <p className="text-3xs text-gray-600 leading-relaxed">
-                    <strong>What it means:</strong> An amplification score. 
-                    If a complementary helper stock has a Beta of 1.5, it normally swings 50% wider/further than the main stock when prices move, creating higher percentage opportunities.
+                    <strong>What it is:</strong> An expensive target exit line where the stock is considered stretched and statistically overvalued.
+                    <br />
+                    <strong>Formula:</strong> <code>YTD Normal Average * (1 + 1.5 * Volatility Rate)</code>.
+                    <br />
+                    <strong>Why it matters:</strong> Reaching this level indicates the stock's price is stretched too far upward. This is an optimal point to realize gains or trimmer positions because the risk of a downward drop is rising.
                   </p>
                 </div>
 
                 <div className="space-y-1 pt-4">
                   <h4 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 block flex-shrink-0" />
-                    Co-Integration
-                    <span className="text-[9px] font-mono font-bold text-indigo-500 uppercase bg-indigo-50 px-1.5 py-0.5 rounded ml-auto">Co-Int</span>
+                    Stock Correlation / Connection
+                    <span className="text-[9px] font-mono font-bold text-indigo-500 uppercase bg-indigo-50 px-1.5 py-0.5 rounded ml-auto">r Value</span>
                   </h4>
                   <p className="text-3xs text-gray-600 leading-relaxed">
-                    <strong>What it means:</strong> Describes two stocks that are tethered together in the real-world utility or supply chain. This means even if they wander apart temporarily, they will always move back together soon.
+                    <strong>What it is:</strong> A score between -1 and +1 measuring how closely two stocks move together. 
+                    <br />
+                    <strong>Why it matters:</strong> Positive correlation means they rise and fall together (e.g. semiconductor foundries and AI chip designers). Low or negative correlation helps you diversify your portfolio so that all of your holdings don't drop at the same time.
                   </p>
                 </div>
               </div>

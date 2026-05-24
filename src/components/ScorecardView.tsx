@@ -161,6 +161,40 @@ export function ScorecardView({ stocks, selectedTicker, onUpdateStock, onNavigat
     }
   };
 
+  // Helper to retrieve top 5 stocks by category based on asymmetry score
+  const getTop5ByCategory = (categoryTheme: string) => {
+    // Normalise themes for safe comparison matches
+    const targetTheme = categoryTheme.toLowerCase().replace(/\s+/g, "");
+    
+    const filtered = stocks.filter(s => {
+      const sTheme = s.theme.toLowerCase().replace(/\s+/g, "");
+      return sTheme === targetTheme || sTheme.includes(targetTheme) || targetTheme.includes(sTheme) ||
+             (targetTheme === "power" && sTheme.includes("energy"));
+    });
+
+    return filtered
+      .map(s => {
+        // Fallback calculations for asymmetry score if not explicitly stored
+        const num = s.asymmetry.upside + s.asymmetry.conviction + s.asymmetry.catalyst;
+        const den = s.asymmetry.downside + s.asymmetry.risk;
+        const calcAsymmetry = parseFloat((num / (den || 1)).toFixed(2));
+        
+        return {
+          ...s,
+          rankScore: s.asymmetry.asymmetryScore ?? calcAsymmetry
+        };
+      })
+      .sort((a, b) => b.rankScore - a.rankScore)
+      .slice(0, 5);
+  };
+
+  const categoriesSet = [
+    { key: "AI", label: "AI Solutions", color: "border-indigo-100 bg-indigo-50/10 text-indigo-700", icon: "🧠" },
+    { key: "Quantum", label: "Quantum Scale", color: "border-purple-100 bg-purple-50/10 text-purple-700", icon: "⚛️" },
+    { key: "Data Centres", label: "Data Centres", color: "border-teal-100 bg-teal-50/10 text-teal-700", icon: "🌐" },
+    { key: "Power", label: "Power Infrastructure", color: "border-amber-100 bg-amber-50/10 text-amber-700", icon: "⚡" }
+  ];
+
   return (
     <div className="space-y-6">
       
@@ -195,6 +229,95 @@ export function ScorecardView({ stocks, selectedTicker, onUpdateStock, onNavigat
               </option>
             ))}
           </select>
+        </div>
+      </div>
+
+      {/* Dynamic Top 5 Ranked Focus Stocks across 4 Key Technology Categories */}
+      <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-4">
+        <div>
+          <h2 className="text-sm font-bold font-mono tracking-wider uppercase text-gray-800 flex items-center gap-1.5">
+            <Sparkles className="w-4 h-4 text-amber-500 animate-spin-slow" />
+            Top 5 Dynamic Ranked Stocks per Tactical Theme
+          </h2>
+          <p className="text-xs text-gray-500 mt-1">
+            Stocks are mathematically sorted and ranked live based on their custom risk-reward **Asymmetry Scores** (the list adapts dynamically to any changes you make below!). Click a stock's ticker to select and score it.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {categoriesSet.map((cat) => {
+            const rankedList = getTop5ByCategory(cat.key);
+            return (
+              <div key={cat.key} className="border border-gray-100 rounded-xl bg-slate-50/50 p-4 transition-all hover:shadow-xs flex flex-col justify-between">
+                <div>
+                  {/* Category Header */}
+                  <div className="flex items-center justify-between border-b border-gray-100 pb-2 mb-3">
+                    <span className="font-bold text-xs text-gray-800 flex items-center gap-1">
+                      <span className="text-sm">{cat.icon}</span>
+                      {cat.label}
+                    </span>
+                    <span className="text-4xs font-mono bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded-md font-bold uppercase border border-indigo-100">
+                      Top {rankedList.length}
+                    </span>
+                  </div>
+
+                  {/* Stock List rows */}
+                  {rankedList.length === 0 ? (
+                    <p className="text-3xs text-gray-400 font-mono py-6 text-center">No coverage active</p>
+                  ) : (
+                    <div className="space-y-1.5">
+                      {rankedList.map((item, idx) => {
+                        const isFocus = item.ticker === activeTicker;
+                        return (
+                          <div
+                            key={item.ticker}
+                            onClick={() => {
+                              setActiveTicker(item.ticker);
+                              const targetEl = document.getElementById("refresh-hud");
+                              if (targetEl) targetEl.scrollIntoView({ behavior: "smooth" });
+                            }}
+                            className={`p-1.5 rounded-lg border text-3xs flex items-center justify-between cursor-pointer transition-all ${
+                              isFocus 
+                                ? "bg-indigo-600 border-indigo-650 text-white shadow-xs font-semibold" 
+                                : "bg-white hover:bg-indigo-50/40 border-gray-100 hover:border-indigo-100 text-gray-700"
+                            }`}
+                          >
+                            <div className="flex items-center gap-1.5">
+                              <span className={`w-3.5 h-3.5 flex items-center justify-center font-mono font-bold text-[8.5px] rounded-full shrink-0 ${
+                                idx === 0 ? "bg-amber-100 text-amber-800" :
+                                idx === 1 ? "bg-slate-100 text-slate-700" : "bg-slate-50 text-gray-500"
+                              }`}>
+                                {idx + 1}
+                              </span>
+                              <strong className="font-mono text-[10.5px] tracking-tight">{item.ticker}</strong>
+                              <span className={`text-[8.5px] truncate max-w-[70px] ${isFocus ? "text-indigo-200" : "text-gray-400 font-medium"}`}>
+                                {item.companyName.slice(0, 15)}
+                              </span>
+                            </div>
+
+                            <div className="flex items-center gap-1 font-mono text-[9px]">
+                              <span>${item.stats.currentPrice}</span>
+                              <span className={`px-1 rounded-sm text-[8px] font-bold ${
+                                isFocus ? "bg-indigo-750 text-white" : "bg-emerald-50 text-emerald-800"
+                              }`}>
+                                {item.rankScore.toFixed(1)}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-4 border-t border-gray-100 pt-2 text-center">
+                  <span className="text-[8.5px] text-gray-450 font-mono">
+                    Total {cat.key} in database: {stocks.filter(s => s.theme.toLowerCase().replace(/\s+/g, "").includes(cat.key.toLowerCase().replace(/\s+/g, ""))).length}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
