@@ -12,19 +12,20 @@ import { PortfolioView } from "./components/PortfolioView";
 import { ChartView } from "./components/ChartView";
 import { ThesisView } from "./components/ThesisView";
 import { OutlierRecommendationsView } from "./components/OutlierRecommendationsView";
+import { CoupledPairsView } from "./components/CoupledPairsView";
 import { PriceAlertsView, PriceAlert } from "./components/PriceAlertsView";
 import { supabase } from "./lib/supabase";
 import { DiscussionEmbed } from 'disqus-react';
 
 // Lucide icons
 import { 
-  BarChart4, 
-  Search, 
-  FolderPlus, 
-  Sliders, 
-  ArrowRightLeft, 
-  Briefcase, 
-  LineChart, 
+  BarChart4,
+  Search,
+  FolderPlus,
+  Sliders,
+  ArrowRightLeft,
+  Briefcase,
+  LineChart,
   FileText,
   TrendingUp,
   Fingerprint,
@@ -34,7 +35,8 @@ import {
   MessageSquare,
   Bell,
   Sun,
-  Moon
+  Moon,
+  Link2
 } from "lucide-react";
 
 // Helper to determine minutes corresponding to standard refresh keys
@@ -722,6 +724,16 @@ export default function App() {
           </button>
 
           <button
+            onClick={() => setActiveTab("pairs")}
+            className={`px-3 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
+              activeTab === "pairs" ? "bg-indigo-600 text-white" : "text-slate-400 hover:text-slate-200"
+            }`}
+          >
+            <Link2 className="w-3.5 h-3.5" />
+            Coupled Pairs
+          </button>
+
+          <button
             onClick={() => setActiveTab("alerts")}
             className={`px-3 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
               activeTab === "alerts" ? "bg-indigo-600 text-white" : "text-indigo-400 hover:text-indigo-300"
@@ -899,6 +911,9 @@ export default function App() {
         {activeTab === "recommendations" && (
           <OutlierRecommendationsView stocks={stocks} />
         )}
+        {activeTab === "pairs" && (
+          <CoupledPairsView stocks={stocks} />
+        )}
         {activeTab === "alerts" && (
           <PriceAlertsView
             stocks={stocks}
@@ -1038,6 +1053,16 @@ export default function App() {
               >
                 <FileText className="w-4 h-4" />
                 <span className="text-4xs font-bold uppercase tracking-wider block">Thesis Checklists</span>
+              </button>
+
+              <button
+                onClick={() => { setActiveTab("pairs"); setShowMoreMenu(false); }}
+                className={`py-3 px-3 rounded-xl border flex flex-col items-center justify-center gap-1 text-center transition-all cursor-pointer ${
+                  activeTab === "pairs" ? "bg-indigo-600 text-white border-indigo-600" : "bg-slate-50 dark:bg-slate-850 border-gray-150 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                }`}
+              >
+                <Link2 className="w-4 h-4" />
+                <span className="text-4xs font-bold uppercase tracking-wider block">Coupled Pairs</span>
               </button>
 
               <button

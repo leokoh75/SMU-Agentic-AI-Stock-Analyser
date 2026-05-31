@@ -81,6 +81,14 @@ export interface Stock {
   priceHistory?: PricePoint[]; // Historical prices or simulated trend 2020-2026
 }
 
+export interface CoupledPair {
+  id: string;
+  tickerA: string;
+  tickerB: string;
+  relationship: string;
+  divergenceThreshold: number; // % deviation that triggers a signal
+}
+
 export interface MarketEvent {
   id: string;
   title: string;

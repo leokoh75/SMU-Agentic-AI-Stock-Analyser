@@ -1,4 +1,4 @@
-import { Stock, MarketEvent, AsymmetryMetrics } from "./types";
+import { Stock, MarketEvent, AsymmetryMetrics, CoupledPair } from "./types";
 
 export function calculateAsymmetryScore(asymmetry: AsymmetryMetrics): number {
   const numerator = (asymmetry.upside || 1) + (asymmetry.conviction || 1) + (asymmetry.catalyst || 1);
@@ -1063,5 +1063,82 @@ export const SAMPLE_EVENTS: MarketEvent[] = [
       { ticker: "GOOGL", impact: "Positive", analysis: "DeepMind quantum optimization teams gain massive computing simulation potential." },
       { ticker: "IBM", impact: "Positive", analysis: "Validates superconducting quantum interconnect architectures as error-correction accelerates." }
     ]
+  }
+];
+
+// ── Coupled Pairs: 10 economically-linked cross-sector pairs ──────────────────
+// Logic: normalize both stocks to index=100, compute shared trajectory (average).
+// If one stock rises ABOVE trajectory → SELL that stock (overvalued vs pair).
+// If one stock falls BELOW trajectory → BUY that stock (undervalued vs pair).
+export const COUPLED_PAIRS: CoupledPair[] = [
+  {
+    id: "nvda-ceg",
+    tickerA: "NVDA",
+    tickerB: "CEG",
+    relationship: "NVIDIA's AI GPUs require enormous electricity. Constellation Energy (nuclear) supplies clean, reliable power to AI data centers under long-term Power Purchase Agreements. NVDA demand growth directly expands CEG's contracted revenue.",
+    divergenceThreshold: 15
+  },
+  {
+    id: "msft-anet",
+    tickerA: "MSFT",
+    tickerB: "ANET",
+    relationship: "Arista Networks supplies the high-speed switching fabric inside Microsoft's Azure data centers. Every new Azure region Microsoft opens generates direct ANET hardware procurement. Their expansion cycles are tightly coupled.",
+    divergenceThreshold: 15
+  },
+  {
+    id: "avgo-vrt",
+    tickerA: "AVGO",
+    tickerB: "VRT",
+    relationship: "Broadcom's AI networking ASICs (XPU/TPU custom silicon) pack enormous heat density into data centers. Vertiv supplies the thermal management and power distribution infrastructure those racks require. AVGO density growth scales VRT revenue.",
+    divergenceThreshold: 15
+  },
+  {
+    id: "googl-dlr",
+    tickerA: "GOOGL",
+    tickerB: "DLR",
+    relationship: "Digital Realty provides the physical colocation space that Google leases for its global GCP infrastructure. Google's AI hyperscaler investments directly increase DLR's long-term lease occupancy and data center build pipeline.",
+    divergenceThreshold: 15
+  },
+  {
+    id: "amd-eqix",
+    tickerA: "AMD",
+    tickerB: "EQIX",
+    relationship: "AMD EPYC CPUs and Instinct MI GPU clusters are deployed inside Equinix colocation data centers by hyperscalers and enterprise AI customers. AMD's data center win rate expands Equinix's compute density and interconnection revenue.",
+    divergenceThreshold: 15
+  },
+  {
+    id: "ionq-ibm",
+    tickerA: "IONQ",
+    tickerB: "IBM",
+    relationship: "IonQ (trapped-ion) and IBM (superconducting) are the two leading quantum computing platforms. Their market sentiment tracks the same enterprise quantum adoption curve. When one is priced for hype and the other lags, a relative opportunity opens.",
+    divergenceThreshold: 15
+  },
+  {
+    id: "intc-hon",
+    tickerA: "INTC",
+    tickerB: "HON",
+    relationship: "Intel and Honeywell co-develop hybrid quantum-classical architectures. Intel supplies the classical processing substrate; Honeywell's trapped-ion systems run quantum layers on top. Both benefit from enterprise quantum R&D budgets.",
+    divergenceThreshold: 15
+  },
+  {
+    id: "orcl-gev",
+    tickerA: "ORCL",
+    tickerB: "GEV",
+    relationship: "Oracle's aggressive AI cloud expansion (10+ new data center regions) requires gigawatts of reliable power generation. GE Vernova builds the gas turbines and grid infrastructure feeding those Oracle campus expansions.",
+    divergenceThreshold: 15
+  },
+  {
+    id: "rgti-vst",
+    tickerA: "RGTI",
+    tickerB: "VST",
+    relationship: "Rigetti's quantum data centers are concentrated in power-intensive Texas and California corridors. Vistra Energy dominates Texas power generation and benefits from the same AI + quantum compute electricity demand wave.",
+    divergenceThreshold: 15
+  },
+  {
+    id: "oklo-nee",
+    tickerA: "OKLO",
+    tickerB: "NEE",
+    relationship: "Oklo's micro nuclear reactors represent next-generation on-site power for data centers. NextEra dominates today's clean energy infrastructure. Both benefit from AI data center power demand—different time horizons, same macro tailwind.",
+    divergenceThreshold: 15
   }
 ];
