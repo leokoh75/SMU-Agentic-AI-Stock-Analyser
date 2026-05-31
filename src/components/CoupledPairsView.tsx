@@ -10,7 +10,8 @@ import {
   CheckCircle2,
   Info,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  BookOpen
 } from "lucide-react";
 
 interface CoupledPairsViewProps {
@@ -240,6 +241,131 @@ export function CoupledPairsView({ stocks }: CoupledPairsViewProps) {
           When <strong>Company B falls below</strong> the shared trajectory → it is relatively undervalued → <span className="text-emerald-700 font-bold">BUY B</span>.
           Full stop.
         </p>
+      </div>
+
+      {/* ── Plain English Guide ───────────────────────────────────────────── */}
+      <div className="bg-white border border-gray-150 rounded-2xl overflow-hidden shadow-sm">
+        <div className="px-5 py-3.5 bg-slate-800 text-white flex items-center gap-2">
+          <BookOpen className="w-4 h-4 text-indigo-400 shrink-0" />
+          <span className="text-xs font-bold tracking-tight">Plain English: How to Read Every Number on This Page</span>
+        </div>
+
+        <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-6 text-sm text-slate-700 font-sans">
+
+          {/* Left column: concept definitions */}
+          <div className="space-y-5">
+
+            <div className="flex gap-3">
+              <span className="w-6 h-6 rounded-full bg-indigo-600 text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">1</span>
+              <div>
+                <p className="font-bold text-slate-900">The Index — what does "100" mean?</p>
+                <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                  Both stocks in a pair are reset to the value <strong>100</strong> on <strong>January 2020</strong> (the start of our data).
+                  Think of it like two runners both standing at the same starting line.
+                  If a stock is now at <strong>130</strong>, it means it has grown <strong>30% since January 2020</strong>.
+                  If it's at <strong>80</strong>, it has shrunk 20% from that same starting line.
+                  The actual share price in dollars is shown separately.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <span className="w-6 h-6 rounded-full bg-slate-600 text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">2</span>
+              <div>
+                <p className="font-bold text-slate-900">Trajectory Value — what is the dashed line?</p>
+                <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                  The <strong>Trajectory</strong> number shown in the grey box (e.g. "112.4") is simply the
+                  <strong> average of both stocks' index values right now</strong>.
+                  It answers: "If both companies grew equally together, where would they be?"
+                  The dashed grey line on the chart is this average across time.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <span className="w-6 h-6 rounded-full bg-amber-500 text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">3</span>
+              <div>
+                <p className="font-bold text-slate-900">Deviation % — how far has one drifted?</p>
+                <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                  The percentage under each stock's signal badge tells you how much that stock
+                  has drifted <em>away from the trajectory</em>.
+                  A <span className="text-rose-700 font-bold">positive number (+12.3%)</span> means the stock is running ahead of its partner.
+                  A <span className="text-emerald-700 font-bold">negative number (−14.1%)</span> means the stock is lagging behind.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <span className="w-6 h-6 rounded-full bg-emerald-600 text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">4</span>
+              <div>
+                <p className="font-bold text-slate-900">The Signal Threshold — when does a signal fire?</p>
+                <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                  A <strong>BUY or SELL badge appears only when the deviation reaches ±15%</strong>.
+                  Under 15% either way → no action, both stocks are still travelling together normally (<strong>HOLD</strong>).
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <span className="w-6 h-6 rounded-full bg-indigo-400 text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">5</span>
+              <div>
+                <p className="font-bold text-slate-900">Time span used</p>
+                <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                  All calculations use <strong>14 price checkpoints from January 2020 to May 2026</strong>
+                  — one snapshot every six months (Jan and Jul each year).
+                  That is roughly <strong>6 years of history</strong>. The current prices are then compared
+                  against that 6-year shared path.
+                </p>
+              </div>
+            </div>
+
+          </div>
+
+          {/* Right column: worked example */}
+          <div className="bg-slate-50 rounded-xl border border-slate-150 p-4 space-y-4">
+            <p className="text-xs font-bold text-slate-800 border-b border-slate-200 pb-2">Worked Example — NVDA &amp; CEG</p>
+
+            <div className="space-y-2 text-xs text-slate-700">
+              <p>Suppose on the calculation date:</p>
+              <div className="grid grid-cols-2 gap-2 font-mono text-xs">
+                <div className="bg-indigo-50 border border-indigo-100 rounded p-2">
+                  <span className="block text-indigo-400 text-[9px] uppercase font-bold mb-0.5">NVDA index</span>
+                  <strong className="text-lg text-indigo-800">145</strong>
+                  <span className="block text-3xs text-slate-500 mt-0.5">up 45% since Jan 2020</span>
+                </div>
+                <div className="bg-emerald-50 border border-emerald-100 rounded p-2">
+                  <span className="block text-emerald-400 text-[9px] uppercase font-bold mb-0.5">CEG index</span>
+                  <strong className="text-lg text-emerald-800">95</strong>
+                  <span className="block text-3xs text-slate-500 mt-0.5">down 5% since Jan 2020</span>
+                </div>
+              </div>
+
+              <div className="bg-slate-100 border border-slate-200 rounded p-2 font-mono text-xs text-center">
+                <span className="block text-slate-500 text-[9px] uppercase font-bold mb-0.5">Shared Trajectory</span>
+                <strong className="text-base text-slate-800">(145 + 95) ÷ 2 = 120</strong>
+              </div>
+
+              <div className="space-y-1.5 pt-1">
+                <div className="flex justify-between items-center bg-rose-50 border border-rose-100 rounded px-3 py-1.5">
+                  <span className="text-xs font-sans">NVDA deviation:</span>
+                  <span className="font-mono font-bold text-rose-700">(145 − 120) ÷ 120 × 100 = <strong>+20.8%</strong></span>
+                </div>
+                <p className="text-3xs text-rose-800 px-1">NVDA is 20.8% above its partner's path → over ±15% threshold → <strong>SELL NVDA</strong></p>
+
+                <div className="flex justify-between items-center bg-emerald-50 border border-emerald-100 rounded px-3 py-1.5 mt-2">
+                  <span className="text-xs font-sans">CEG deviation:</span>
+                  <span className="font-mono font-bold text-emerald-700">(95 − 120) ÷ 120 × 100 = <strong>−20.8%</strong></span>
+                </div>
+                <p className="text-3xs text-emerald-800 px-1">CEG is 20.8% below its partner's path → over ±15% threshold → <strong>BUY CEG</strong></p>
+              </div>
+
+              <div className="bg-amber-50 border border-amber-200 rounded p-2 text-3xs text-amber-900 mt-2 leading-relaxed">
+                <strong>Rule of thumb:</strong> The stock that ran ahead is expensive relative to its economic partner — trim it. The stock that lagged is cheap relative to that same partner — add to it. When they reconnect to the same trajectory, both trades resolve.
+              </div>
+            </div>
+          </div>
+
+        </div>
       </div>
 
       {/* ── Filter row ────────────────────────────────────────────────────── */}
